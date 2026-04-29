@@ -46,7 +46,7 @@ def execute_task(route_data: dict) -> dict:
         # params can be empty for "get" operations
         if params is None:
             raise ValueError("Parameters dict is required in route_data")
-        
+        logger.info(params)
         # Build API URL
         url = build_url(group, params)
         logger.info(f"Built URL: {url}")

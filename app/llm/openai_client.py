@@ -42,6 +42,13 @@ ENROLLMENT OPTIONS:
 - get_default_enroll_options (format) - Get default enrollment settings
 - set_default_enroll_options (enroll_on_device, enroll_using, enroll_finger_count, enroll_palm_count, enroll_card_count, enroll_mode) - Set default enrollment options
 
+ACCESS SETTING:
+- get_access_setting (week_day, work_start_hh, work_start_mm, work_end_hh, work_end_mm, format) - Get current access settings
+- set_access_setting (week_day, work_start_hh, work_start_mm, work_end_hh, work_end_mm, format) - Set access settings
+- get_default_access_setting (format) - Get default access settings
+- set_default_access_setting (week_day, work_start_hh, work_start_mm, work_end_hh, work_end_mm) - Set default access settings
+
+
 Examples:
 
 Input: Add user Ravi with id 101

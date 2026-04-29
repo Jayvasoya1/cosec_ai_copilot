@@ -28,11 +28,11 @@ def build_url(group: str, params: Dict) -> str:
     if not group:
         raise APIBuildError("Group name is required")
     
-    if not params:
-        raise APIBuildError("Parameters must not be empty")
+    # if not params:
+    #     raise APIBuildError("Parameters must not be empty")
     
-    if "action" not in params:
-        raise APIBuildError("'action' parameter is required", params)
+    # if "action" not in params:
+    #     raise APIBuildError("'action' parameter is required", params)
     
     logger.debug(f"Building URL for group: {group}, params: {params}")
     

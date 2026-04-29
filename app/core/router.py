@@ -7,7 +7,7 @@ from app.exceptions import RouterError, SchemaError
 from app.logger import logger
 from handlers.user_handler import handle_user_intent
 from handlers.enroll_options_handler import handle_enroll_options_intent
-
+from handlers.access_setting_handler import handle_access_setting_intent
 
 class HandlerRegistry:
     """Registry for intent handlers"""
@@ -23,6 +23,7 @@ class HandlerRegistry:
         # Intents like: add_user, delete_user, update_user → all use user_entity handler
         self.register_entity("user", handle_user_intent)
         self.register_entity("enroll_options", handle_enroll_options_intent)
+        self.register_entity("access_setting", handle_access_setting_intent)
         logger.info("Handler registry initialized with default handlers")
     
     def register_entity(self, entity_name: str, handler):
@@ -40,6 +41,7 @@ class HandlerRegistry:
         self._entity_handlers[entity_name] = handler
         logger.debug(f"Registered handler for entity: {entity_name}")
     
+    #not use currently
     def register_pattern(self, pattern: str, handler):
         """
         Register handler for exact intent match
@@ -64,7 +66,8 @@ class HandlerRegistry:
         Raises:
             RouterError: If no handler found
         """
-        # Try exact match first (highest priority)
+        # Try exact match first (highest priority) 
+        #not use currently
         if intent in self._handlers:
             logger.debug(f"Found exact handler for intent: {intent}")
             return self._handlers[intent]
