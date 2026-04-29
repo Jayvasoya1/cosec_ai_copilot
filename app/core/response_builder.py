@@ -4,6 +4,7 @@ Response Builder - Formats execution results into user-friendly responses
 
 from app.core.question_engine import generate_question
 from app.core.memory import memory
+from app.core.param_resolver import MEMORY_KEY_MAP
 from app.logger import logger
 
 
@@ -77,15 +78,11 @@ def build_response(results: list) -> dict:
         
         details.append(result)
     
-    # Clear memory context for successful groups
-    # This prevents context from being reused for different operations
     if successful_groups:
         logger.info(f"Clearing memory context for successful groups: {successful_groups}")
         for group in successful_groups:
-            # Clear group-specific context
-            if group == "users":
-                memory.data.pop("last_user", None)
-            # Add more groups as needed
+            key = MEMORY_KEY_MAP.get(group, f"last_{group}")
+            memory.data.pop(key, None)
         logger.debug(f"Memory after clearing: {memory.data}")
     
     # Determine overall status
