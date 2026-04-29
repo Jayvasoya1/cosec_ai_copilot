@@ -3,7 +3,10 @@ Main FastAPI application for CoSec AI Copilot
 Orchestrates the complete request-response flow
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from app.config import validate_config, DEBUG_MODE
 from app.core.intent_parser import parse_intent
@@ -30,6 +33,21 @@ app = FastAPI(
     version="0.1.0",
     debug=DEBUG_MODE
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Serve UI
+_STATIC_DIR = "app/static"
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+@app.get("/", response_class=FileResponse, include_in_schema=False)
+def serve_ui():
+    return FileResponse(f"{_STATIC_DIR}/index.html")
 
 
 class ChatQuery(BaseModel):
@@ -83,33 +101,38 @@ def chat(query: ChatQuery):
     logger.info(f"User input: {user_input}")
     
     try:
-        # Check if user is answering a follow-up question (pending intent in memory)
         pending = memory.get("pending_intent")
-        if pending:
-            intent = pending["intent"]
+        tasks = None
+
+        # Always try LLM first — a full command overrides any pending state
+        try:
+            intent_data = parse_intent(user_input)
+            tasks = plan_tasks(intent_data)
+            if tasks and pending:
+                # User typed a new command while a follow-up was pending → discard pending
+                logger.info(f"New command received — discarding pending intent '{pending['intent']}'")
+                memory.data.pop("pending_intent", None)
+                pending = None
+        except CoSecException:
+            tasks = None  # LLM couldn't extract anything → treat as continuation below
+
+        # If LLM returned nothing AND there is a pending intent → continuation answer
+        if not tasks and pending:
+            intent  = pending["intent"]
             missing = pending["missing"]
             memory.data.pop("pending_intent", None)
-            logger.info(f"Continuing pending intent '{intent}', filling: {missing[0] if missing else '?'}")
-            # Map user's raw reply directly to the first missing field — skip LLM
+            logger.info(f"Continuing pending intent '{intent}', filling '{missing[0] if missing else '?'}' = '{user_input}'")
             params = {missing[0]: user_input} if missing else {}
             tasks = [{"intent": intent, "parameters": params}]
-        else:
-            # Normal flow: parse intent via LLM
-            logger.debug("Step 1: Parsing intent...")
-            intent_data = parse_intent(user_input)
 
-            logger.debug("Step 2: Planning tasks...")
-            tasks = plan_tasks(intent_data)
+        if not tasks:
+            return ChatResponse(
+                status="error",
+                message="Could not understand your request. Please try again.",
+                details={"reason": "no_tasks_generated"}
+            )
 
-            if not tasks:
-                logger.warning("No tasks generated from intent")
-                return ChatResponse(
-                    status="error",
-                    message="Could not understand your request. Please try again.",
-                    details={"reason": "no_tasks_generated"}
-                )
-
-            logger.info(f"Planned {len(tasks)} task(s)")
+        logger.info(f"Planned {len(tasks)} task(s)")
 
         # Execute tasks (shared path for both normal and continuation)
         logger.debug("Executing tasks...")
