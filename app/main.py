@@ -11,6 +11,7 @@ from app.core.planner import plan_tasks
 from app.core.router import route_intent
 from app.core.executor import execute_tasks
 from app.core.response_builder import build_response
+from app.core.memory import memory
 from app.exceptions import CoSecException
 from app.logger import logger, setup_logger
 
@@ -82,35 +83,52 @@ def chat(query: ChatQuery):
     logger.info(f"User input: {user_input}")
     
     try:
-        # Step 1: Parse intent using LLM
-        logger.debug("Step 1: Parsing intent...")
-        intent_data = parse_intent(user_input)
-        
-        # Step 2: Plan tasks
-        logger.debug("Step 2: Planning tasks...")
-        tasks = plan_tasks(intent_data)
-        
-        if not tasks:
-            logger.warning("No tasks generated from intent")
-            return ChatResponse(
-                status="error",
-                message="Could not understand your request. Please try again.",
-                details={"reason": "no_tasks_generated"}
-            )
-        
-        logger.info(f"Planned {len(tasks)} task(s)")
-        
-        # Step 3-5: Route, Execute, and Build Response
-        logger.debug("Step 3-5: Routing and executing tasks...")
+        # Check if user is answering a follow-up question (pending intent in memory)
+        pending = memory.get("pending_intent")
+        if pending:
+            intent = pending["intent"]
+            missing = pending["missing"]
+            memory.data.pop("pending_intent", None)
+            logger.info(f"Continuing pending intent '{intent}', filling: {missing[0] if missing else '?'}")
+            # Map user's raw reply directly to the first missing field — skip LLM
+            params = {missing[0]: user_input} if missing else {}
+            tasks = [{"intent": intent, "parameters": params}]
+        else:
+            # Normal flow: parse intent via LLM
+            logger.debug("Step 1: Parsing intent...")
+            intent_data = parse_intent(user_input)
+
+            logger.debug("Step 2: Planning tasks...")
+            tasks = plan_tasks(intent_data)
+
+            if not tasks:
+                logger.warning("No tasks generated from intent")
+                return ChatResponse(
+                    status="error",
+                    message="Could not understand your request. Please try again.",
+                    details={"reason": "no_tasks_generated"}
+                )
+
+            logger.info(f"Planned {len(tasks)} task(s)")
+
+        # Execute tasks (shared path for both normal and continuation)
+        logger.debug("Executing tasks...")
         results = execute_tasks(tasks, route_intent)
-        
-        # Build final response
-        logger.debug("Building response...")
+
+        # If still need input, save pending state for the next turn
+        for result in results:
+            if "need_input" in result or result.get("status") == "need_input":
+                if result.get("pending_intent"):
+                    memory.set("pending_intent", {
+                        "intent": result["pending_intent"],
+                        "missing": result.get("missing", [])
+                    })
+                break
+
         response = build_response(results)
-        
         logger.info(f"Response status: {response.get('status')}")
         logger.info(f"=== Request Complete ===\n")
-        
+
         return ChatResponse(
             status=response.get("status", "error"),
             message=response.get("message", "Completed"),

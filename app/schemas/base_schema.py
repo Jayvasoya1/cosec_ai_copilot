@@ -67,7 +67,7 @@ class BaseSchema(ABC):
         
         required = self.get_required_fields(action)
         optional = self.get_optional_fields(action)
-        logger.debug("debug",optional, required)
+        logger.debug(f"Validating {action}: required={required}, optional={optional}")
         # Check for missing required fields
         missing = [f for f in required if f not in params]
         

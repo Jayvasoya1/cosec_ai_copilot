@@ -30,6 +30,7 @@ def resolve_params_for_group(group: str, action: str, params: Dict) -> Tuple[boo
         if missing:
             log_parameter_resolution(params, missing, merged)
             logger.info(f"Missing required parameters: {missing}")
+            memory.set(memory_key, merged)  # save partial so next turn can complete it
             return False, {"missing": missing, "partial": merged, "resolved": None}
 
         is_valid, validation_result = schema.validate_parameters(action, merged)

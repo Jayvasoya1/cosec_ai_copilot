@@ -129,6 +129,7 @@ def execute_tasks(tasks: list, router) -> list:
             
             # Check if user input is needed
             if result.get("status") == "need_input" or "need_input" in result:
+                result["pending_intent"] = task.get("intent")
                 logger.info(f"User input needed, stopping execution")
                 return [result]
             
