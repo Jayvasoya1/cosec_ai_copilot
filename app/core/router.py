@@ -6,6 +6,7 @@ Dynamic routing using handler registry
 from app.exceptions import RouterError, SchemaError
 from app.logger import logger
 from handlers.user_handler import handle_user_intent
+from handlers.enroll_options_handler import handle_enroll_options_intent
 
 
 class HandlerRegistry:
@@ -21,6 +22,7 @@ class HandlerRegistry:
         # Map entity types to handlers
         # Intents like: add_user, delete_user, update_user → all use user_entity handler
         self.register_entity("user", handle_user_intent)
+        self.register_entity("enroll_options", handle_enroll_options_intent)
         logger.info("Handler registry initialized with default handlers")
     
     def register_entity(self, entity_name: str, handler):

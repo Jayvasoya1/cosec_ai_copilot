@@ -6,6 +6,7 @@ Enables dynamic routing and handler selection
 from typing import Dict, Optional
 from app.schemas.base_schema import BaseSchema
 from schemas.user_schema import user_schema
+from schemas.enroll_options_schema import enroll_options_schema
 from app.exceptions import SchemaError
 from app.logger import logger
 
@@ -28,6 +29,7 @@ class SchemaRegistry:
     def _register_default_schemas(self):
         """Register built-in schemas"""
         self.register("users", user_schema)
+        self.register("enroll-options", enroll_options_schema)
         logger.info("Schema registry initialized with default schemas")
     
     def register(self, group_name: str, schema: BaseSchema):

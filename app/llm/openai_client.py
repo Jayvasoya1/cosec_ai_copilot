@@ -3,15 +3,16 @@ OpenAI LLM client with error handling
 """
 
 from openai import OpenAI, APIError, APIConnectionError, RateLimitError
-from app.config import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TIMEOUT, DEBUG_MODE
+from app.config import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TIMEOUT, DEBUG_MODE, USE_MOCK
 from app.exceptions import IntentParsingError, ConfigError
 from app.logger import logger
 
-# Validate API key
-if not OPENAI_API_KEY:
+# Initialize client only if API key is available
+client = None
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+elif not USE_MOCK:
     raise ConfigError("OPENAI_API_KEY not configured", "OPENAI_API_KEY")
-
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 SYSTEM_PROMPT = """
 You are an intent detection engine for a security system.
@@ -29,9 +30,17 @@ Format:
 }
 
 Supported intents:
-- add_user (name, user_id)
-- delete_user (user_id)
-- update_user (user_id, name)
+
+USER MANAGEMENT:
+- add_user (name, user_id) - Add a new user
+- delete_user (user_id) - Delete a user
+- update_user (user_id, name) - Update user details
+
+ENROLLMENT OPTIONS:
+- get_enroll_options (format) - Get current enrollment configuration
+- set_enroll_options (enroll_on_device, enroll_using, enroll_finger_count, enroll_palm_count, enroll_card_count, enroll_mode, format) - Set enrollment options
+- get_default_enroll_options (format) - Get default enrollment settings
+- set_default_enroll_options (enroll_on_device, enroll_using, enroll_finger_count, enroll_palm_count, enroll_card_count, enroll_mode) - Set default enrollment options
 
 Examples:
 
@@ -49,20 +58,38 @@ Output:
   ]
 }
 
-Input: Add Ravi and delete user 102
+Input: Set enrollment to max 5 fingers
 Output:
 {
   "tasks": [
     {
-      "intent": "add_user",
+      "intent": "set_enroll_options",
       "parameters": {
-        "name": "Ravi"
+        "enroll_finger_count": "5"
       }
-    },
+    }
+  ]
+}
+
+Input: Get current enrollment settings
+Output:
+{
+  "tasks": [
     {
-      "intent": "delete_user",
+      "intent": "get_enroll_options",
+      "parameters": {}
+    }
+  ]
+}
+
+Input: Set dual template mode for enrollment
+Output:
+{
+  "tasks": [
+    {
+      "intent": "set_enroll_options",
       "parameters": {
-        "user_id": "102"
+        "enroll_mode": "1"
       }
     }
   ]
@@ -84,6 +111,16 @@ def call_llm(user_input: str) -> str:
     """
     try:
         logger.debug(f"Calling LLM with input: {user_input}")
+        
+        # If in mock mode and no API key, use simple intent parser
+        if USE_MOCK and not client:
+            return _mock_parse_intent(user_input)
+        
+        if not client:
+            raise IntentParsingError(
+                "LLM client not initialized",
+                {"user_input": user_input}
+            )
         
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
@@ -128,3 +165,78 @@ def call_llm(user_input: str) -> str:
             f"Failed to call LLM: {str(e)}",
             {"user_input": user_input, "error_type": type(e).__name__}
         )
+
+
+def _mock_parse_intent(user_input: str) -> str:
+    """
+    Simple mock intent parser for testing without OpenAI API
+    Used when USE_MOCK=True and no API key is configured
+    """
+    import json
+    
+    user_input_lower = user_input.lower()
+    
+    # Mock mapping of user inputs to intents
+    if "enroll" in user_input_lower or "enrollment" in user_input_lower:
+        if "get" in user_input_lower or "show" in user_input_lower or "current" in user_input_lower:
+            if "default" in user_input_lower:
+                return json.dumps({
+                    "tasks": [{
+                        "intent": "get_default_enroll_options",
+                        "parameters": {}
+                    }]
+                })
+            return json.dumps({
+                "tasks": [{
+                    "intent": "get_enroll_options",
+                    "parameters": {}
+                }]
+            })
+        elif "set" in user_input_lower:
+            params = {}
+            if "finger" in user_input_lower or "5" in user_input_lower:
+                params["finger_count"] = "5"
+            if "mode" in user_input_lower or "dual" in user_input_lower:
+                params["mode"] = "1"
+            if "default" in user_input_lower:
+                return json.dumps({
+                    "tasks": [{
+                        "intent": "set_default_enroll_options",
+                        "parameters": params
+                    }]
+                })
+            return json.dumps({
+                "tasks": [{
+                    "intent": "set_enroll_options",
+                    "parameters": params
+                }]
+            })
+    
+    # User management intents
+    if "add" in user_input_lower or "create" in user_input_lower:
+        if "user" in user_input_lower:
+            parts = user_input_lower.split()
+            name = "user"
+            user_id = None
+            for i, part in enumerate(parts):
+                if part == "user" and i + 1 < len(parts):
+                    name = parts[i + 1]
+                if part == "id" and i + 1 < len(parts):
+                    user_id = parts[i + 1]
+            return json.dumps({
+                "tasks": [{
+                    "intent": "add_user",
+                    "parameters": {
+                        "name": name,
+                        **({"user_id": user_id} if user_id else {})
+                    }
+                }]
+            })
+    
+    # Default: return empty task
+    return json.dumps({
+        "tasks": [{
+            "intent": "unknown",
+            "parameters": {}
+        }]
+    })

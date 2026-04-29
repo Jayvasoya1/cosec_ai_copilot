@@ -43,8 +43,9 @@ def execute_task(route_data: dict) -> dict:
         if not group:
             raise ValueError("Group name is required in route_data")
         
-        if not params:
-            raise ValueError("Parameters are required in route_data")
+        # params can be empty for "get" operations
+        if params is None:
+            raise ValueError("Parameters dict is required in route_data")
         
         # Build API URL
         url = build_url(group, params)
@@ -57,7 +58,9 @@ def execute_task(route_data: dict) -> dict:
                 "status": "success",
                 "url": url,
                 "message": f"✅ Mock executed: {params}",
-                "mock": True
+                "mock": True,
+                "group": group,
+                "action": params.get("action")
             }
         
         # Real device execution
@@ -71,7 +74,9 @@ def execute_task(route_data: dict) -> dict:
             "url": url,
             "message": "✅ Command executed successfully",
             "response": response.get("data"),
-            "device_status": response.get("status_code")
+            "device_status": response.get("status_code"),
+            "group": group,
+            "action": params.get("action")
         }
         
     except DeviceAPIError as e:

@@ -3,6 +3,7 @@ Response Builder - Formats execution results into user-friendly responses
 """
 
 from app.core.question_engine import generate_question
+from app.core.memory import memory
 from app.logger import logger
 
 
@@ -43,6 +44,8 @@ def build_response(results: list) -> dict:
     errors = []
     successes = []
     details = []
+    failed_actions = []  # Track which groups/actions failed
+    successful_groups = set()  # Track successful groups for context clearing
     
     for i, result in enumerate(results):
         logger.debug(f"Processing result {i}: {result.get('status')}")
@@ -57,6 +60,7 @@ def build_response(results: list) -> dict:
                 "code": error_code,
                 "details": result.get("details", {})
             })
+            failed_actions.append(result.get("group"))
             
         elif result.get("status") == "success":
             success_msg = result.get("message", "Command executed")
@@ -66,11 +70,23 @@ def build_response(results: list) -> dict:
                 "url": result.get("url"),
                 "mock": result.get("mock", False)
             })
+            successful_groups.add(result.get("group"))
             
         else:
             messages.append(f"⚠️ Task {i+1}: Unknown status '{result.get('status')}'")
         
         details.append(result)
+    
+    # Clear memory context for successful groups
+    # This prevents context from being reused for different operations
+    if successful_groups:
+        logger.info(f"Clearing memory context for successful groups: {successful_groups}")
+        for group in successful_groups:
+            # Clear group-specific context
+            if group == "users":
+                memory.data.pop("last_user", None)
+            # Add more groups as needed
+        logger.debug(f"Memory after clearing: {memory.data}")
     
     # Determine overall status
     if errors:

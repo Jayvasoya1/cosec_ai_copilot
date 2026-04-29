@@ -27,7 +27,7 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
 
 def validate_config():
     """Validate critical configuration"""
-    if not OPENAI_API_KEY:
-        raise ValueError("OPENAI_API_KEY is required")
+    if not OPENAI_API_KEY and not USE_MOCK:
+        raise ValueError("OPENAI_API_KEY is required when USE_MOCK is False")
     if not DEVICE_IP:
         raise ValueError("DEVICE_IP is required")
