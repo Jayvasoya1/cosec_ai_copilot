@@ -12,6 +12,7 @@ The schema-level required-field check happens in validate_node, not here.
 """
 
 import re
+import difflib
 from typing import Optional
 from langchain_core.tools import tool
 
@@ -379,6 +380,86 @@ def _parse_weekday(text: str):
     return None
 
 
+# ── Fuzzy spelling correction for mock classifier ────────────────────────────
+
+# All domain keywords the classifier cares about — used to fuzzy-correct typos.
+_DOMAIN_WORDS: frozenset = frozenset({
+    # action verbs
+    "add", "create", "register",
+    "update", "edit", "modify", "change", "rename",
+    "delete", "remove", "deactivate", "erase",
+    "get", "show", "fetch", "retrieve", "list", "find", "display", "view", "check",
+    "set", "configure", "restore", "reset",
+    "enroll",
+    # entities
+    "user", "users", "employee", "staff", "member", "person", "worker",
+    "door", "doors",
+    "panel", "device",
+    "access", "setting", "settings", "schedule",
+    "config", "configuration",
+    "detail", "details", "info", "information", "summary", "status",
+    "default",
+    # access-setting descriptors
+    "work", "working", "start", "end", "hour", "hours", "time", "timing",
+    "office", "shift", "morning", "evening",
+    # weekdays
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+    # door / enroll specifics
+    "biometric", "face", "finger", "palm", "fingerprint",
+    "address", "type", "name",
+})
+
+# Words after these are user-supplied values (names, IDs, IPs) — never correct them.
+_VALUE_MARKERS: frozenset = frozenset({
+    "name", "id", "ip", "mac", "with", "to", "as", "called", "named", "number",
+})
+
+
+def _normalise_input(text: str) -> str:
+    """
+    Fuzzy-correct spelling mistakes in domain keywords only.
+    Numbers, IPs, MACs, names (after value markers), and short words are
+    passed through unchanged — only intent/entity words are corrected.
+    """
+    words = text.lower().split()
+    result: list[str] = []
+    protect_next = False
+
+    for word in words:
+        # Previous word was a value marker → keep this word exactly as-is
+        if protect_next:
+            result.append(word)
+            protect_next = False
+            continue
+
+        # Value marker → next word is user-provided, protect it
+        if word in _VALUE_MARKERS:
+            result.append(word)
+            protect_next = True
+            continue
+
+        # Numeric tokens and IP/MAC-like strings → preserve
+        if word.isdigit() or re.match(r'^[\d.:/]+$', word):
+            result.append(word)
+            continue
+
+        # Very short words (1–2 chars) → too risky to correct
+        if len(word) <= 2:
+            result.append(word)
+            continue
+
+        # Already a known domain word → no correction needed
+        if word in _DOMAIN_WORDS:
+            result.append(word)
+            continue
+
+        # Fuzzy match against domain vocabulary (threshold 0.78)
+        matches = difflib.get_close_matches(word, _DOMAIN_WORDS, n=1, cutoff=0.78)
+        result.append(matches[0] if matches else word)
+
+    return " ".join(result)
+
+
 # ── Mock classifier (used when USE_MOCK=True and no API key) ─────────────────
 
 def _word_in(text: str, *words) -> bool:
@@ -391,11 +472,12 @@ def mock_classify(text: str):
     Keyword-based intent classifier for mock mode (no LLM key needed).
     Returns (tool_name, normalised_params) or (None, {}) if unrecognised.
     """
-    t = text.lower().strip()
-    parts = text.split()
+    t = _normalise_input(text)   # ← fuzzy-correct spelling mistakes first
+    parts = text.split()         # ← keep original text for param value extraction
 
     # ── panel details (check before door to avoid conflict on "door") ─────────
-    if "panel" in t and any(k in t for k in ("detail", "summary", "count", "info", "status", "how many")):
+    if "panel" in t and any(k in t for k in ("detail", "summary", "count", "info",
+                                              "information", "status", "how many")):
         params = {}
         if "user" in t:    params["user"]    = "1"
         if "door" in t:    params["door"]    = "1"
@@ -403,11 +485,19 @@ def mock_classify(text: str):
         if "io" in t:      params["io-link"] = "1"
         return "get_panel_details", params
 
+    # ── device / panel loose match (e.g. "show device info") ─────────────────
+    if any(k in t for k in ("device", "panel")) and \
+       any(k in t for k in ("info", "information", "summary", "status", "detail", "details", "count")):
+        return "get_panel_details", {}
+
     # ── door config ───────────────────────────────────────────────────────────
     if "door" in t:
-        _door_write = _word_in(t, "set", "update", "change", "configure", "edit", "modify", "restore")
-        _door_read  = (_word_in(t, "get", "show", "fetch", "read", "display", "find", "list", "what")
-                       or any(k in t for k in ("config", "configuration", "setting", "info", "detail")))
+        _door_write = _word_in(t, "set", "update", "change", "configure", "edit",
+                                "modify", "restore", "reset", "add", "create")
+        _door_read  = (_word_in(t, "get", "show", "fetch", "read", "display",
+                                 "find", "list", "view", "check", "what")
+                       or any(k in t for k in ("config", "configuration", "setting",
+                                               "settings", "info", "detail", "details")))
 
         if _door_write or _door_read:
             if "default" in t:
@@ -418,14 +508,15 @@ def mock_classify(text: str):
                 return "set_panel_door_config", _extract_door_params(parts)
             return "get_panel_door_config", _extract_door_params(parts)
 
-    # ── users (before enroll — "enroll/register employee" = add_user) ─────────
-    _user_entity = any(k in t for k in ("user", "employee", "staff", "member"))
+    # ── users ─────────────────────────────────────────────────────────────────
+    _user_entity = any(k in t for k in ("user", "users", "employee", "staff",
+                                         "member", "person", "worker"))
 
     if _word_in(t, "delete", "remove", "deactivate", "erase") and _user_entity:
         uid = next((p for p in parts if p.isdigit()), None)
         return "delete_user", ({"user-id": uid} if uid else {})
 
-    if _word_in(t, "update", "edit", "rename", "modify") and _user_entity:
+    if _word_in(t, "update", "edit", "rename", "modify", "change") and _user_entity:
         return "update_user", _extract_user_params(parts)
 
     if _word_in(t, "add", "create", "register") and _user_entity:
@@ -434,26 +525,33 @@ def mock_classify(text: str):
     if "new" in t and _user_entity and not _word_in(t, "get", "show", "find"):
         return "add_user", _extract_user_params(parts)
 
-    if _word_in(t, "get", "show", "find", "fetch", "retrieve", "list", "look") and _user_entity:
+    if _word_in(t, "get", "show", "find", "fetch", "retrieve",
+                "list", "look", "view", "check", "display") and _user_entity:
         uid = next((p for p in parts if p.isdigit()), None)
         return "get_user", ({"user-id": uid} if uid else {})
 
-    # ── enroll biometric options ───────────────────────────────────────────────
-    if "enroll" in t:
+    # ── enroll ────────────────────────────────────────────────────────────────
+    if "enroll" in t or "biometric" in t or "face" in t and _user_entity:
         params = {**_extract_door_params(parts), **_extract_user_params(parts)}
         return "enroll_user", params
 
     # ── access setting ────────────────────────────────────────────────────────
-    _access_phrase = any(k in t for k in ("access setting", "access time", "work hour", "work time",
-                                           "start time", "end time", "work start", "work end", "schedule"))
-    _access_loose  = "access" in t and any(k in t for k in ("setting", "time", "hour", "schedule"))
+    _access_phrase = any(k in t for k in (
+        "access setting", "access time", "work hour", "work time",
+        "start time", "end time", "work start", "work end", "schedule",
+        "working hour", "office hour", "shift time", "timing",
+    ))
+    _access_loose = "access" in t and any(k in t for k in (
+        "setting", "settings", "time", "hour", "hours", "schedule", "timing",
+    ))
+    _time_direct = any(k in t for k in ("work start", "work end", "start time", "end time"))
 
-    if _access_phrase or _access_loose:
+    if _access_phrase or _access_loose or _time_direct:
         if "default" in t:
-            if _word_in(t, "set", "update", "change", "restore"):
+            if _word_in(t, "set", "update", "change", "restore", "reset"):
                 return "set_default_access_setting", _extract_access_params(t, parts)
             return "get_default_access_setting", {}
-        if _word_in(t, "set", "update", "change", "configure"):
+        if _word_in(t, "set", "update", "change", "configure", "reset"):
             return "set_access_setting", _extract_access_params(t, parts)
         return "get_access_setting", {}
 
