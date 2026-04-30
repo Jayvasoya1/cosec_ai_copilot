@@ -306,18 +306,17 @@ def get_panel_door_config(
     format:  Optional[str] = None,
 ) -> str:
     """
-    READ / retrieve / fetch the current configuration of a specific door (READ-ONLY operation).
-    Use for: "get door config", "show door N settings", "read door config", "what is door N config",
-    "fetch door info", "display door settings".
-    Do NOT use when the user wants to change, set, update, or configure a door.
-    Extract: door_id from "door 2", "door id 2", or any number next to "door".
+    READ the current configuration of a specific door (READ-ONLY operation).
+    Use for: "get door config", "show door N settings", "fetch door info",
+    "what is door N config", "display door settings", "read door configuration".
+    Do NOT use when the user says set, configure, update, or change a door.
+    REQUIRED: door_id — extract from "door 2", "door id 2", or number after "door".
     """
     return "dispatched"
 
 
 @tool
 def set_panel_door_config(
-    door_id:            Optional[str] = None,
     door_name:          Optional[str] = None,
     door_type:          Optional[str] = None,
     communication_type: Optional[str] = None,
@@ -326,12 +325,14 @@ def set_panel_door_config(
     format:             Optional[str] = None,
 ) -> str:
     """
-    WRITE / set / configure / update a door's settings on the COSEC device (WRITE operation).
-    Use for: "set door config", "configure door N", "set door configuration",
-    "update door settings", "change door name/IP/type", "set door 2 name to MainGate".
-    ALWAYS use this tool (not get_panel_door_config) when the user says:
-    set, configure, update, change, modify, edit — for a door.
-    Extract: door_id (which door), then any of door_name, door_type, ip_address, mac_address.
+    WRITE / set / configure / update door settings on the COSEC device (WRITE operation).
+    Use for: "set door config", "configure door", "set door configuration",
+    "update door settings", "change door name/IP/type".
+    ALWAYS use this (not get_panel_door_config) when the user says set/configure/update/change for a door.
+    The door ID is auto-assigned — do NOT look for or extract a door ID for this tool.
+    Extract: door_name ("name MainGate"), door_type ("type vega" or "argo face"),
+    ip_address ("ip 192.168.1.50"), mac_address ("mac AA:BB:CC:DD:EE:FF").
+    All 4 fields will be collected from the user if not provided in the message.
     """
     return "dispatched"
 

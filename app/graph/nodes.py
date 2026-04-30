@@ -63,16 +63,20 @@ PANEL DETAILS (device summary counts)
   get_panel_details → "panel details", "device summary/info", "how many users/doors/alarms on the panel"
 
 DOOR CONFIGURATION
-  ⚠️  KEY DISAMBIGUATION: "set/configure/update/change door" = set_panel_door_config (WRITE operation)
-                          "get/show/fetch/read door" = get_panel_door_config (READ operation)
-  "set door configuration"      → set_panel_door_config  (NOT get!)
-  "configure door N"            → set_panel_door_config
+  ⚠️  DISAMBIGUATION: "set/configure/update/change door" = set_panel_door_config (WRITE)
+                      "get/show/fetch/read door"         = get_panel_door_config (READ)
+  "set door configuration"      → set_panel_door_config   (requires: name, type, IP, MAC)
+  "configure door"              → set_panel_door_config
   "update door settings"        → set_panel_door_config
   "change door name/IP/type"    → set_panel_door_config
-  "show/get/fetch door config"  → get_panel_door_config
+  "get/show/fetch door config"  → get_panel_door_config   (requires: door ID)
   "what are door settings"      → get_panel_door_config
   get_default_panel_door_config → "get/show default door config"
   set_default_panel_door_config → "set/restore/change default door config"
+
+  set_panel_door_config NEEDS these 4 fields (will be asked if missing):
+    door_name, door_type, ip_address, mac_address
+  get_panel_door_config NEEDS: door_id (which door to read)
 
 ━━━ PARAMETER EXTRACTION RULES ━━━
 
@@ -98,9 +102,11 @@ Enroll
   "dual mode" / "dual template"     → enroll_mode="1"
   "single mode" / "single template" → enroll_mode="0"
 
-Door
-  "door 2" / "door id 2"  → door_id="2"
-  "name MainGate"          → door_name="MainGate"
+Door extraction (for get only — door_id for set is auto-assigned by the system)
+  "get door 2" / "door id 2"  → door_id="2"
+  "name MainGate"              → door_name="MainGate"
+  "type vega"                  → door_type="vega"
+  "ip 192.168.1.50"            → ip_address="192.168.1.50"
 """
 
 
