@@ -1,6 +1,6 @@
 """
-Enroll-Options group schema - handles enrollment configuration
-API Group: enroll-options
+Enroll-User group schema - handles enrollment configuration
+API Group: enroll-user
 """
 
 from typing import Dict, List, Any
@@ -8,9 +8,9 @@ from app.schemas.base_schema import BaseSchema
 
 
 class EnrollOptionsSchema(BaseSchema):
-    """Schema for /device.cgi/enroll-options API group"""
+    """Schema for /device.cgi/enroll-user API group"""
     
-    group_name = "enroll-options"
+    group_name = "enroll-user"
     
     actions = {
         "enroll": {

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Test script for enroll-options integration"""
+"""Test script for enroll-users integration"""
 
 from app.core.router import handler_registry
 from app.schemas.registry import schema_registry
 
 print("=" * 60)
-print("ENROLL-OPTIONS INTEGRATION TEST")
+print("ENROLL-User INTEGRATION TEST")
 print("=" * 60)
 print()
 
@@ -44,7 +44,7 @@ print()
 
 # Test 4: Schema validation
 print("Test 4: Schema field validation")
-schema = schema_registry.get('enroll-options')
+schema = schema_registry.get('enroll-user')
 
 test_values = [
     ('enroll-finger-count', '5', True),

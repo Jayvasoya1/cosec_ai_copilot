@@ -98,8 +98,8 @@ def build_url(group: str, params: Dict) -> str:
                 params_to_encode["pdid"] = config.PDID + 1
                 config.PDID += 1
                 
-        if group == "enroll-options" and params.get("action") == "enroll":
-            logger.info(f"Building URL for enroll-options enroll with params: {params_to_encode}")
+        if group == "enroll-user" and params.get("action") == "enroll":
+            logger.info(f"Building URL for enroll-user enroll with params: {params_to_encode}")
 
 
             params_to_encode["face-count"] = "1"

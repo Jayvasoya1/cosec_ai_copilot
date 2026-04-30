@@ -34,7 +34,7 @@ class SchemaRegistry:
     def _register_default_schemas(self):
         """Register built-in schemas"""
         self.register("users", user_schema)
-        self.register("enroll-options", enroll_options_schema)
+        self.register("enroll-user", enroll_options_schema)
         self.register("access-setting", access_setting_schema)
         self.register("panel-details", panel_details_schema)
         self.register("panel-door-list",panel_door_list_schema)
