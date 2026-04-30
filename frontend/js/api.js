@@ -4,26 +4,31 @@
  * CONTRACT (what the backend expects and returns):
  *
  * POST /chat
- *   Request  : { "text": string }          (1–5000 chars)
+ *   Request  : { "text": string, "session_id": string }
  *   Response : {
  *     "status":  "success" | "error" | "need_input" | "partial_success",
- *     "message": string,                   (human-readable)
+ *     "message": string,
  *     "details": {
  *       "successes":      [{ "url": string, "mock": boolean }],
- *       "missing_fields": [string],         (only when status = need_input)
- *       "reason":         string            (only when status = error)
+ *       "missing_fields": [string],
+ *       "reason":         string
  *     }
  *   }
  *
  * GET /health
- *   Response : { "status": "healthy", "service": "CoSec AI Copilot" }
+ *   Response : { "status": "healthy", "service": "...", "version": "..." }
+ *
+ * session_id:
+ *   Generated once per browser tab (see app.js → getSessionId).
+ *   The backend uses it as a LangGraph thread_id so each tab has
+ *   completely isolated multi-turn conversation state.
  */
 
-async function chatRequest(text) {
+async function chatRequest(text, sessionId) {
   const res = await fetch(`${CONFIG.API_BASE}/chat`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ text }),
+    body:    JSON.stringify({ text, session_id: sessionId }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();

@@ -1,36 +1,39 @@
 """
-Main FastAPI application for CoSec AI Copilot
-Orchestrates the complete request-response flow
+CoSec AI Copilot — FastAPI entry point (LangGraph edition)
+
+Every POST /chat invocation:
+  1. Wraps the user's text as a HumanMessage
+  2. Invokes the compiled LangGraph with the session's thread_id
+     (MemorySaver handles per-session state automatically)
+  3. Reads response_status / response_message / response_details
+     from the final state and returns a ChatResponse
+
+The graph itself (app/graph/graph.py) owns all pipeline logic.
+This file is intentionally thin — only HTTP plumbing lives here.
 """
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
-from app.config import validate_config, DEBUG_MODE
-from app.core.intent_parser import parse_intent
-from app.core.planner import plan_tasks
-from app.core.router import route_intent
-from app.core.executor import execute_tasks
-from app.core.response_builder import build_response
-from app.core.memory import memory
-from app.exceptions import CoSecException
-from app.logger import logger, setup_logger
+from langchain_core.messages import HumanMessage
 
-# Validate configuration at startup
+from app.config import validate_config, DEBUG_MODE
+from app.graph.graph import graph
+from app.logger import logger
+
 try:
     validate_config()
-    logger.info("Configuration validated")
+    logger.info("Configuration validated successfully")
 except Exception as e:
-    logger.critical(f"Configuration error: {str(e)}")
+    logger.critical(f"Configuration error at startup: {e}")
     raise
 
-# FastAPI app
 app = FastAPI(
     title="CoSec AI Copilot",
-    description="AI-powered COSEC device control system",
-    version="0.1.0",
-    debug=DEBUG_MODE
+    description="AI-powered COSEC device control — LangGraph edition",
+    version="2.0.0",
+    debug=DEBUG_MODE,
 )
 
 app.add_middleware(
@@ -40,140 +43,78 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class ChatQuery(BaseModel):
-    """User query model"""
-    text: str = Field(..., min_length=1, max_length=5000, description="User input text")
-    
-    @validator('text')
-    def text_not_empty(cls, v):
+
+# ── Request / Response models ────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    text:       str = Field(..., min_length=1, max_length=5000, description="User's natural language command")
+    session_id: str = Field(default="default", description="Unique ID per user/tab — isolates conversation state")
+
+    @validator("text")
+    def not_blank(cls, v):
         if not v.strip():
-            raise ValueError('Text cannot be only whitespace')
+            raise ValueError("Text cannot be whitespace only")
         return v.strip()
 
 
 class ChatResponse(BaseModel):
-    """API response model"""
-    status: str = Field(..., description="Response status: success, error, need_input, partial_success")
-    message: str = Field(..., description="Main message for user")
-    details: dict = Field(default_factory=dict, description="Additional details")
+    status:  str  = Field(..., description="success | error | need_input | partial_success")
+    message: str  = Field(..., description="Human-readable response for the chat UI")
+    details: dict = Field(default_factory=dict, description="Structured data (URLs, missing fields, etc.)")
 
+
+# ── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.get("/health")
-def health_check():
-    """Health check endpoint"""
+def health():
+    """Liveness check — also used by the frontend status badge."""
     return {
-        "status": "healthy",
-        "service": "CoSec AI Copilot"
+        "status":  "healthy",
+        "service": "CoSec AI Copilot",
+        "version": "2.0.0",
     }
 
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(query: ChatQuery):
+def chat(req: ChatRequest):
     """
-    Main chat endpoint for user queries
-    
-    Workflow:
-    1. Parse natural language intent
-    2. Plan tasks
-    3. Route to appropriate handler
-    4. Execute tasks
-    5. Build response
-    
-    Args:
-        query: User query with text field
-        
-    Returns:
-        ChatResponse with status and message
+    Main chat endpoint.
+
+    session_id becomes the LangGraph thread_id.  MemorySaver keeps a separate
+    state snapshot per thread_id, so each user/tab gets isolated multi-turn
+    context without any global state.
     """
-    
-    user_input = query.text
-    logger.info(f"=== New Request ===")
-    logger.info(f"User input: {user_input}")
-    
+    logger.info(f"=== Chat [{req.session_id}] ===")
+    logger.info(f"Input: {req.text}")
+
+    config = {"configurable": {"thread_id": req.session_id}}
+
     try:
-        pending = memory.get("pending_intent")
-        tasks = None
-
-        # Always try LLM first — a full command overrides any pending state
-        try:
-            intent_data = parse_intent(user_input)
-            tasks = plan_tasks(intent_data)
-            if tasks and pending:
-                # User typed a new command while a follow-up was pending → discard pending
-                logger.info(f"New command received — discarding pending intent '{pending['intent']}'")
-                memory.data.pop("pending_intent", None)
-                pending = None
-        except CoSecException:
-            tasks = None  # LLM couldn't extract anything → treat as continuation below
-
-        # If LLM returned nothing AND there is a pending intent → continuation answer
-        if not tasks and pending:
-            intent  = pending["intent"]
-            missing = pending["missing"]
-            memory.data.pop("pending_intent", None)
-            logger.info(f"Continuing pending intent '{intent}', filling '{missing[0] if missing else '?'}' = '{user_input}'")
-            params = {missing[0]: user_input} if missing else {}
-            tasks = [{"intent": intent, "parameters": params}]
-
-        if not tasks:
-            return ChatResponse(
-                status="error",
-                message="Could not understand your request. Please try again.",
-                details={"reason": "no_tasks_generated"}
-            )
-
-        logger.info(f"Planned {len(tasks)} task(s)")
-
-        # Execute tasks (shared path for both normal and continuation)
-        logger.debug("Executing tasks...")
-        results = execute_tasks(tasks, route_intent)
-
-        # If still need input, save pending state for the next turn
-        for result in results:
-            if "need_input" in result or result.get("status") == "need_input":
-                if result.get("pending_intent"):
-                    memory.set("pending_intent", {
-                        "intent": result["pending_intent"],
-                        "missing": result.get("missing", [])
-                    })
-                break
-
-        response = build_response(results)
-        logger.info(f"Response status: {response.get('status')}")
-        logger.info(f"=== Request Complete ===\n")
-
-        return ChatResponse(
-            status=response.get("status", "error"),
-            message=response.get("message", "Completed"),
-            details=response
+        final_state = graph.invoke(
+            {"messages": [HumanMessage(content=req.text)]},
+            config=config,
         )
-        
-    except CoSecException as e:
-        logger.error(f"Application error: {e.message} (code: {e.code})")
-        return ChatResponse(
-            status="error",
-            message=e.message,
-            details={
-                "error_code": e.code,
-                "error_details": e.details
-            }
-        )
-        
+
+        status  = final_state.get("response_status",  "error")
+        message = final_state.get("response_message", "Completed")
+        details = final_state.get("response_details") or {}
+
+        logger.info(f"Response [{req.session_id}]: {status} — {message[:80]}")
+        logger.info("=== Done ===\n")
+
+        return ChatResponse(status=status, message=message, details=details)
+
     except Exception as e:
-        logger.critical(f"Unexpected error: {str(e)}", exc_info=True)
-        
+        logger.critical(f"Unhandled error [{req.session_id}]: {e}", exc_info=True)
         return ChatResponse(
             status="error",
             message="An unexpected error occurred. Please try again.",
-            details={
-                "error_type": type(e).__name__,
-                "error_message": str(e) if DEBUG_MODE else None
-            }
+            details={"error": str(e) if DEBUG_MODE else None},
         )
 
 
-# Mount frontend LAST — API routes registered above take priority over static files.
-# html=True means StaticFiles serves index.html for / and unknown paths.
+# ── Static frontend ──────────────────────────────────────────────────────────
+# Mounted LAST so all API routes above take priority over static file matching.
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
 
@@ -183,5 +124,5 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=8000,
-        log_level="debug" if DEBUG_MODE else "info"
+        log_level="debug" if DEBUG_MODE else "info",
     )

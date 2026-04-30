@@ -1,9 +1,26 @@
 /**
- * app.js — orchestration: wires UI + API together
- * Event handlers, send flow, health polling
+ * app.js — orchestration: wires UI + API together.
+ *
+ * Session isolation:
+ *   Each browser tab generates a UUID stored in sessionStorage.
+ *   It is sent with every /chat request as session_id so the backend
+ *   (LangGraph MemorySaver) keeps that tab's conversation context
+ *   completely separate from every other tab or user.
+ *   Closing and re-opening the tab starts a fresh session.
  */
 
-let isPending = false;
+// ── Session ID ───────────────────────────────────────────────────────────────
+
+function getSessionId() {
+  let id = sessionStorage.getItem('cosec_session_id');
+  if (!id) {
+    id = 'sess_' + crypto.randomUUID();
+    sessionStorage.setItem('cosec_session_id', id);
+  }
+  return id;
+}
+
+const SESSION_ID = getSessionId();
 
 // ── Send message ─────────────────────────────────────────────────────────────
 
@@ -21,11 +38,10 @@ async function sendMessage() {
   showTyping();
 
   try {
-    const data = await chatRequest(text);
+    const data = await chatRequest(text, SESSION_ID);
     hideTyping();
     appendBotMsg(data.message, data.status, data.details);
-    isPending = data.status === 'need_input';
-    setPending(isPending);
+    setPending(data.status === 'need_input');
 
   } catch (err) {
     hideTyping();
