@@ -11,7 +11,7 @@ OPENAI_TIMEOUT = 30
 # Device Configuration
 DEVICE_IP = os.getenv("DEVICE_IP", "192.168.1.100")
 DEVICE_USERNAME = os.getenv("DEVICE_USERNAME", "admin")
-DEVICE_PASSWORD = os.getenv("DEVICE_PASSWORD", "admin")
+DEVICE_PASSWORD = os.getenv("DEVICE_PASSWORD", "1234")
 DEVICE_TIMEOUT = int(os.getenv("DEVICE_TIMEOUT", 5))
 
 # API Configuration

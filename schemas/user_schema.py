@@ -18,6 +18,7 @@ class UserSchema(BaseSchema):
             "description": "Create or update user",
             "required": ["user-id", "name"],
             "optional": [
+                "ref-user-id",
                 "user-active",
                 "vip",
                 "user-pin",

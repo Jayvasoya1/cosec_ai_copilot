@@ -54,13 +54,24 @@ def build_url(group: str, params: Dict) -> str:
                 f"Invalid parameters for {group}.{action}: {result.get('missing')}",
                 params
             )
-        
         # Build base URL
-        base = f"/device.cgi/{group}"
+        base = f"/192.168.103.184.cgi/{group}"
+        
+        # Add hardcoded parameters for specific actions
+        params_to_encode = params.copy()
+        
+        # For "set user" action, add hardcoded parameters
+        if group == "users" and params.get("action") == "set":
+            # ref-user-id should reference the user-id being set
+            if "user-id" in params_to_encode:
+                params_to_encode["ref-user-id"] = params_to_encode["user-id"]
+            # user-active defaults to 1 (active)
+            if "active" not in params_to_encode:
+                params_to_encode["active"] = "1"
         
         # URL encode parameters
         query_parts = []
-        for key, value in params.items():
+        for key, value in params_to_encode.items():
             encoded_value = quote(str(value), safe='')
             query_parts.append(f"{key}={encoded_value}")
         
