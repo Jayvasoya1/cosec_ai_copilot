@@ -79,7 +79,7 @@ def build_url(group: str, params: Dict) -> str:
                      params_to_encode["door-type"] = "21"
                 elif params_to_encode["door-type"].lower() == "vega":
                      params_to_encode["door-type"] = "9"
-            params_to_encode["communication-type"] = "ethernet"
+            params_to_encode["communication-type"] = "0"
             params_to_encode["pdid"] = config.PDID + 1
             config.PDID += 1
             # user-active defaults to 1 (active)
