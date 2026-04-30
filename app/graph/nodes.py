@@ -385,11 +385,21 @@ def respond_node(state: CopilotState) -> dict:
 
     # ── 4. Success ───────────────────────────────────────────────────────────
     if result and result.get("status") == "success":
+        success_details = {
+            "url": result.get("url"),
+            "mock": result.get("mock", False),
+        }
+        # Include device response if available (non-mock execution)
+        if result.get("response"):
+            success_details["device_response"] = result.get("response")
+        if result.get("device_status"):
+            success_details["http_status"] = result.get("device_status")
+        
         return {
             "response_status":  "success",
             "response_message": result.get("message", "✅ Command executed successfully"),
             "response_details": {
-                "successes":      [{"url": result.get("url"), "mock": result.get("mock", False)}],
+                "successes":      [success_details],
                 "missing_fields": [],
                 "summary":        {"total_tasks": 1, "successful": 1, "failed": 0},
             },
