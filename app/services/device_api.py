@@ -35,7 +35,7 @@ def call_device_api(url: str) -> dict:
     
     # Build curl command with digest auth
     curl_cmd = [
-        "curl",
+        "curl.exe",
         "-s",  # Silent mode - no progress or error information
         "--digest",
         "-u", f"{DEVICE_USERNAME}:{DEVICE_PASSWORD}",

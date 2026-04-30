@@ -55,7 +55,7 @@ def build_url(group: str, params: Dict) -> str:
                 params
             )
         # Build base URL
-        base = f"/192.168.103.184.cgi/{group}"
+        base = f"/192.168.103.184/device.cgi/{group}"
         
         # Add hardcoded parameters for specific actions
         params_to_encode = params.copy()
@@ -66,8 +66,8 @@ def build_url(group: str, params: Dict) -> str:
             if "user-id" in params_to_encode:
                 params_to_encode["ref-user-id"] = params_to_encode["user-id"]
             # user-active defaults to 1 (active)
-            if "active" not in params_to_encode:
-                params_to_encode["active"] = "1"
+            if "user-active" not in params_to_encode:
+                params_to_encode["user-active"] = "1"
         
         # URL encode parameters
         query_parts = []
