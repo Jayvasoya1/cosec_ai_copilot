@@ -51,6 +51,11 @@ ACCESS SETTING:
 PANEL DETAILS:
 - get_panel_details (user, door, alarm, io_link, format) - Get panel summary counts (users, doors, alarms, IO-links). Pass filter flags to get only specific sections; omit all to get everything.
 
+PANEL DOOR LIST:
+- get_panel_door_list (pdid, format) - Get list of configured panel doors or specific door details. Pass pdid to fetch a particular panel door; omit it to retrieve all doors. Use format to specify response type (text or xml).
+
+COMMAND:
+- get_user_count () - Get total number of users configured in the device. Returns count of all users irrespective of active/inactive status.
 
 Examples:
 
