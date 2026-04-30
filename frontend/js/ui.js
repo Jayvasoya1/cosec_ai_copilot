@@ -105,11 +105,21 @@ function buildExtra(status, details) {
   let html = '';
 
   const successes = details.successes || [];
-  if (successes.length > 0 && successes[0].url) {
-    const s   = successes[0];
-    const cls = s.mock ? 'mock' : 'real';
-    const lbl = s.mock ? '🧪 MOCK' : '🌐 API';
-    html += `<div class="api-row"><div class="api-pill ${cls}">${lbl}: ${esc(s.url)}</div></div>`;
+  if (successes.length > 0) {
+    html += '<div class="api-list">';
+    for (const s of successes) {
+      if (s.url) {
+        const cls = s.mock ? 'mock' : 'real';
+        const lbl = s.mock ? '🧪 MOCK' : '🌐 API';
+        html += `<div class="api-row"><div class="api-pill ${cls}">${lbl}: ${esc(s.url)}</div></div>`;
+        
+        if (s.response) {
+          const respText = typeof s.response === 'object' ? JSON.stringify(s.response, null, 2) : String(s.response);
+          html += `<div class="api-response">${esc(respText)}</div>`;
+        }
+      }
+    }
+    html += '</div>';
   }
 
   const missing = details.missing_fields || [];

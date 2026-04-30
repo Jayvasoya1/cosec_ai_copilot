@@ -214,6 +214,23 @@ body {
 .api-pill.mock { border-color: rgba(245,158,11,.4); color: var(--amber); }
 .api-pill.real { border-color: rgba(34,197,94,.4);  color: var(--green); }
 
+.api-response {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.api-response::-webkit-scrollbar { width: 4px; }
+.api-response::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
 /* Missing fields */
 .missing-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; align-items: center; }
 .missing-label { font-size: 11px; color: var(--subtle); }

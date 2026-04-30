@@ -30,10 +30,10 @@ from app.logger import logger
 
 SYSTEM_PROMPT = (
     "You are an intent detection engine for a COSEC security access control system.\n"
-    "When the user gives a command, call the SINGLE most appropriate tool with every "
-    "parameter you can extract from their message.\n"
-    "If some parameters are missing, still call the tool with what you have — "
-    "the system will ask the user for the rest.\n"
+    "When the user gives a command, call ALL the appropriate tools required to fulfill their request. Extract every "
+    "parameter you can from their message.\n"
+    "CRITICAL: Even if the user provides ZERO parameters for a command, you MUST still call the tool! "
+    "The system will automatically ask the user for the missing required fields later.\n"
     "If the input is ambiguous or not related to access control, do NOT call any tool.\n"
     "Never explain your reasoning — only make tool calls or stay silent."
 )
@@ -63,14 +63,11 @@ def classify_node(state: CopilotState) -> dict:
     Classify the user's latest message.
 
     Priority order:
-      1. LLM tool call detected  → new (or same-intent) command
-      2. No tool call + pending  → continuation: fill missing[0] with user answer
+      1. LLM tool call detected  → new command(s), resets task queue
+      2. No tool call + tasks    → continuation: fill missing[0] with user answer for tasks[0]
       3. Neither                 → unrecognised input
-
-    Always-LLM-first ensures a new command (e.g. "add user Ravi") overrides
-    a pending follow-up from a previous turn.
     """
-    pending_intent = state.get("pending_intent")
+    tasks           = state.get("tasks") or []
     missing_fields  = state.get("missing_fields") or []
     user_text       = state["messages"][-1].content if state.get("messages") else ""
 
@@ -79,31 +76,32 @@ def classify_node(state: CopilotState) -> dict:
     try:
         # ── Mock mode: use keyword classifier ──────────────────────────────
         if USE_MOCK and not OPENAI_API_KEY:
-            tool_name, raw_params = mock_classify(user_text)
-            if tool_name:
-                group, action = TOOL_TO_GROUP_ACTION[tool_name]
-                same_intent   = (pending_intent == tool_name)
+            # We'll support multiple parts separated by "and" in mock mode
+            parts = [p.strip() for p in user_text.lower().split(" and ")]
+            new_tasks = []
+            for part in parts:
+                tool_name, raw_params = mock_classify(part)
+                if tool_name:
+                    group, action = TOOL_TO_GROUP_ACTION[tool_name]
+                    new_tasks.append({
+                        "intent": tool_name,
+                        "group": group,
+                        "action": action,
+                        "params": raw_params
+                    })
+            
+            if new_tasks:
                 update.update({
-                    "current_intent": tool_name,
-                    "current_group":  group,
-                    "current_action": action,
-                    "current_params": raw_params,
-                    # Keep partial only when the LLM is continuing the SAME intent
-                    "partial_params": state.get("partial_params") or {} if same_intent else {},
-                    "pending_intent": None,
-                    "pending_group":  None,
-                    "pending_action": None,
+                    "tasks": new_tasks,
+                    "partial_params": {}, # start fresh
                     "missing_fields": [],
+                    "completed_results": [], # new batch
                 })
-                logger.info(f"[MOCK] classified: {tool_name} params={raw_params}")
-            elif pending_intent and missing_fields:
+                logger.info(f"[MOCK] classified tasks: {new_tasks}")
+            elif tasks and missing_fields:
                 field = missing_fields[0]
                 new_partial = {**(state.get("partial_params") or {}), field: user_text}
                 update.update({
-                    "current_intent": pending_intent,
-                    "current_group":  state.get("pending_group"),
-                    "current_action": state.get("pending_action"),
-                    "current_params": {field: user_text},
                     "partial_params": new_partial,
                     "missing_fields": [],
                 })
@@ -120,46 +118,61 @@ def classify_node(state: CopilotState) -> dict:
         update["messages"] = [response]
 
         if response.tool_calls:
-            # ── New or same-intent command ──────────────────────────────────
-            tc        = response.tool_calls[0]
-            tool_name = tc["name"]
-            raw_args  = {k: v for k, v in tc["args"].items() if v is not None}
-            normalised = normalise_params(raw_args)
+            # ── New commands ────────────────────────────────────────────────
+            new_tasks = []
+            tool_msgs = []
+            for tc in response.tool_calls:
+                tool_name = tc["name"]
+                raw_args  = {k: v for k, v in tc["args"].items() if v is not None}
+                normalised = normalise_params(raw_args)
 
-            if tool_name not in TOOL_TO_GROUP_ACTION:
-                logger.warning(f"LLM called unknown tool: {tool_name}")
+                if tool_name not in TOOL_TO_GROUP_ACTION:
+                    logger.warning(f"LLM called unknown tool: {tool_name}")
+                    continue
+                
+                group, action = TOOL_TO_GROUP_ACTION[tool_name]
+                new_tasks.append({
+                    "intent": tool_name,
+                    "group": group,
+                    "action": action,
+                    "params": normalised
+                })
+                tool_msgs.append(ToolMessage(
+                    content="parameters extracted",
+                    tool_call_id=tc.get("id", "0"),
+                ))
+
+            if not new_tasks:
                 update.update(_unrecognised())
                 return update
 
-            group, action = TOOL_TO_GROUP_ACTION[tool_name]
-            same_intent   = (pending_intent == tool_name)
+            logger.info(f"Tool calls extracted {len(new_tasks)} tasks")
 
-            logger.info(f"Tool call: {tool_name} group={group} action={action} params={normalised}")
+            # Add ToolMessages to close the tool-call loop
+            update["messages"].extend(tool_msgs)
 
-            # Add a ToolMessage to close the tool-call loop in the conversation
-            # so models that require it stay coherent across turns.
-            tool_msg = ToolMessage(
-                content="parameters extracted",
-                tool_call_id=tc.get("id", "0"),
-            )
-            update["messages"] = [response, tool_msg]
+            # Check if this is a continuation where the LLM just re-issued the pending tool call
+            if tasks and missing_fields and len(new_tasks) == 1 and new_tasks[0]["intent"] == tasks[0]["intent"]:
+                logger.info(f"LLM re-issued pending task {tasks[0]['intent']}. Merging params and continuing queue.")
+                merged_params = {
+                    **(state.get("partial_params") or {}),
+                    **new_tasks[0]["params"]
+                }
+                update.update({
+                    "partial_params": merged_params,
+                    "missing_fields": [],
+                    # We do NOT touch tasks or completed_results, so the queue continues!
+                })
+            else:
+                # Completely new command (or user changed their mind)
+                update.update({
+                    "tasks": new_tasks,
+                    "partial_params": {}, # Start fresh for new commands
+                    "missing_fields": [],
+                    "completed_results": [], # New batch
+                })
 
-            update.update({
-                "current_intent": tool_name,
-                "current_group":  group,
-                "current_action": action,
-                "current_params": normalised,
-                # Keep old partial only when the LLM is continuing the same intent
-                # (e.g. it used conversation context to fill one more field).
-                # For a different intent, start fresh.
-                "partial_params": state.get("partial_params") or {} if same_intent else {},
-                "pending_intent": None,
-                "pending_group":  None,
-                "pending_action": None,
-                "missing_fields": [],
-            })
-
-        elif pending_intent and missing_fields:
+        elif tasks and missing_fields:
             # ── Continuation: user answered the pending question ────────────
             field       = missing_fields[0]
             new_partial = {**(state.get("partial_params") or {}), field: user_text}
@@ -167,10 +180,6 @@ def classify_node(state: CopilotState) -> dict:
             logger.info(f"Continuation: filling '{field}' = '{user_text}'")
 
             update.update({
-                "current_intent": pending_intent,
-                "current_group":  state.get("pending_group"),
-                "current_action": state.get("pending_action"),
-                "current_params": {field: user_text},
                 "partial_params": new_partial,
                 "missing_fields": [],
             })
@@ -191,17 +200,15 @@ def classify_node(state: CopilotState) -> dict:
 
 def validate_node(state: CopilotState) -> dict:
     """
-    Merge params collected across turns and validate against the schema.
-
-    partial_params  = everything collected from previous turns
-    current_params  = what was just extracted in this turn
-    merged          = partial ∪ current  (current wins on conflicts)
-
-    Sets missing_fields + pending_* if required fields are still absent.
-    Clears them and stores clean merged params if all requirements met.
+    Validate tasks[0] against schema.
     """
-    group  = state.get("current_group")
-    action = state.get("current_action")
+    tasks = state.get("tasks") or []
+    if not tasks:
+        return {} # Should not happen if routing is correct
+    
+    current_task = tasks[0]
+    group  = current_task["group"]
+    action = current_task["action"]
 
     try:
         schema   = schema_registry.get(group)
@@ -212,7 +219,7 @@ def validate_node(state: CopilotState) -> dict:
         # Merge: partial from previous turns + fresh params from this turn
         merged = {
             **(state.get("partial_params") or {}),
-            **(state.get("current_params") or {}),
+            **(current_task.get("params") or {}),
         }
 
         # Strip fields the schema doesn't know (LLM or user may send extras)
@@ -225,9 +232,6 @@ def validate_node(state: CopilotState) -> dict:
             return {
                 "partial_params":  merged,
                 "missing_fields":  missing,
-                "pending_intent":  state.get("current_intent"),
-                "pending_group":   group,
-                "pending_action":  action,
                 "execution_result": None,
             }
 
@@ -269,20 +273,18 @@ def validate_node(state: CopilotState) -> dict:
 
 def execute_node(state: CopilotState) -> dict:
     """
-    Build the device API URL and call it (real device or mock).
-    Clears all pending / partial state on success so the next command starts clean.
+    Execute tasks[0].
     """
-    group  = state.get("current_group")
-    action = state.get("current_action")
+    tasks = state.get("tasks") or []
+    if not tasks:
+        return {}
+    
+    current_task = tasks[0]
+    group  = current_task["group"]
+    action = current_task["action"]
     params = state.get("partial_params") or {}
 
-    _clear_pending = {
-        "pending_intent": None,
-        "pending_group":  None,
-        "pending_action": None,
-        "partial_params": {},
-        "missing_fields": [],
-    }
+    completed_results = list(state.get("completed_results") or [])
 
     try:
         url = build_url(group, {"action": action, **params})
@@ -296,6 +298,7 @@ def execute_node(state: CopilotState) -> dict:
                 "group":   group,
                 "action":  action,
                 "message": f"✅ Mock executed: {params}",
+                "response": {"status": "success", "mock_data": params},
             }
         else:
             resp = call_device_api(url)
@@ -310,7 +313,15 @@ def execute_node(state: CopilotState) -> dict:
                 "device_status": resp.get("status_code"),
             }
 
-        return {"execution_result": result, **_clear_pending}
+        completed_results.append(result)
+        
+        return {
+            "execution_result": result, 
+            "completed_results": completed_results,
+            "tasks": tasks[1:], # Pop the completed task
+            "partial_params": {}, # Clear for next task
+            "missing_fields": [],
+        }
 
     except CoSecException as e:
         logger.error(f"execute_node CoSec error: {e.message}")
@@ -321,7 +332,9 @@ def execute_node(state: CopilotState) -> dict:
                 "code":    e.code,
                 "details": e.details,
             },
-            **_clear_pending,
+            "tasks": [], # Abort remaining
+            "partial_params": {},
+            "missing_fields": [],
         }
     except Exception as e:
         logger.error(f"execute_node unexpected error: {e}", exc_info=DEBUG_MODE)
@@ -331,7 +344,9 @@ def execute_node(state: CopilotState) -> dict:
                 "error":  str(e),
                 "code":   "EXECUTION_ERROR",
             },
-            **_clear_pending,
+            "tasks": [], # Abort remaining
+            "partial_params": {},
+            "missing_fields": [],
         }
 
 
@@ -339,20 +354,15 @@ def execute_node(state: CopilotState) -> dict:
 
 def respond_node(state: CopilotState) -> dict:
     """
-    Build the final response fields that main.py reads from the state.
-
-    Four cases, in priority order:
-      1. No intent detected      → error / unrecognised
-      2. Missing required fields → need_input + question
-      3. Execution error         → error + details
-      4. Execution success       → success + URL + mock flag
+    Format response using completed_results and any errors/missing fields.
     """
-    intent  = state.get("current_intent")
+    tasks = state.get("tasks") or []
     missing = state.get("missing_fields") or []
     result  = state.get("execution_result")
+    completed = state.get("completed_results") or []
 
     # ── 1. Unrecognised ──────────────────────────────────────────────────────
-    if not intent:
+    if not tasks and not missing and not result and not completed:
         return {
             "response_status":  "error",
             "response_message": "Could not understand your request. Please try again with a clearer command.",
@@ -373,53 +383,42 @@ def respond_node(state: CopilotState) -> dict:
 
     # ── 3. Execution error ───────────────────────────────────────────────────
     if result and result.get("status") == "error":
+        msg = f"Error: {result.get('error', 'Execution failed')}"
+        if completed:
+            msg = f"Partially completed before error. {msg}"
+            
         return {
             "response_status":  "error",
-            "response_message": result.get("error", "Execution failed"),
+            "response_message": msg,
             "response_details": {
                 "error_code": result.get("code"),
                 "details":    result.get("details") or {},
                 "errors":     [result],
+                "successes":  completed,
             },
         }
 
     # ── 4. Success ───────────────────────────────────────────────────────────
-    if result and result.get("status") == "success":
-        success_details = {
-            "url": result.get("url"),
-            "mock": result.get("mock", False),
-        }
-        # Include device response if available (non-mock execution)
-        device_response = result.get("response")
-        http_status = result.get("device_status")
+    if completed:
+        messages = [r.get("message", "✅ Command executed successfully") for r in completed]
         
-        if device_response:
-            success_details["device_response"] = device_response
-        if http_status:
-            success_details["http_status"] = http_status
-        
-        # Format message with device response if available
-        message = result.get("message", "✅ Command executed successfully")
-        if device_response:
-            # Limit response to 500 chars for display, add ellipsis if longer
-            response_preview = device_response[:500] if len(device_response) > 500 else device_response
-            if len(device_response) > 500:
-                response_preview += "..."
-            message += f"\n\n**Device Response:**\n{response_preview}"
-        if http_status:
-            message += f"\n\n**HTTP Status:** {http_status}"
-        
+        # Combine messages
+        if len(completed) > 1:
+            combined_message = f"✅ Successfully executed {len(completed)} tasks:\n" + "\n".join(f"- {m.replace('✅ ', '')}" for m in messages)
+        else:
+            combined_message = messages[0]
+
         return {
             "response_status":  "success",
-            "response_message": message,
+            "response_message": combined_message,
             "response_details": {
-                "successes":      [success_details],
+                "successes":      completed,
                 "missing_fields": [],
-                "summary":        {"total_tasks": 1, "successful": 1, "failed": 0},
+                "summary":        {"total_tasks": len(completed), "successful": len(completed), "failed": 0},
             },
         }
 
-    # ── Fallback (should not reach here in normal operation) ─────────────────
+    # ── Fallback ─────────────────────────────────────────────────────────────
     return {
         "response_status":  "error",
         "response_message": "Unexpected internal state. Please try again.",
@@ -432,8 +431,9 @@ def respond_node(state: CopilotState) -> dict:
 def _unrecognised() -> dict:
     """Return the state fragment for an unrecognised / no-intent turn."""
     return {
-        "current_intent": None,
-        "current_group":  None,
-        "current_action": None,
-        "current_params": {},
+        "tasks": [],
+        "missing_fields": [],
+        "partial_params": {},
+        "completed_results": [],
+        "execution_result": None,
     }
