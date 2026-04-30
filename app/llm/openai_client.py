@@ -240,10 +240,5 @@ def _mock_parse_intent(user_input: str) -> str:
                 }]
             })
     
-    # Default: return empty task
-    return json.dumps({
-        "tasks": [{
-            "intent": "unknown",
-            "parameters": {}
-        }]
-    })
+    # Nothing matched — return empty so caller treats as unrecognised input
+    return json.dumps({"tasks": []})

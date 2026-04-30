@@ -72,13 +72,12 @@ class HandlerRegistry:
             logger.debug(f"Found exact handler for intent: {intent}")
             return self._handlers[intent]
         
-        # Try entity match (second priority)
-        # Intent format: {action}_{entity} or {action}_{entity}_{extra}
-        # Examples: add_user, delete_user, get_access_group
-        for entity_name, handler in self._entity_handlers.items():
-            if f"_{entity_name}" in intent:
+        # Try entity match — use endswith so "add_super_user" never matches "user" before "super_user"
+        # Sort by length descending so the most specific entity wins
+        for entity_name in sorted(self._entity_handlers, key=len, reverse=True):
+            if intent == entity_name or intent.endswith(f"_{entity_name}"):
                 logger.debug(f"Found entity handler for {entity_name} in intent: {intent}")
-                return handler
+                return self._entity_handlers[entity_name]
         
         # Try pattern match (fallback)
         for pattern, handler in self._handlers.items():

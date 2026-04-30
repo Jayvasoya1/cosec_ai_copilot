@@ -31,9 +31,12 @@ def handle_user_intent(intent: str, params: Dict) -> Dict:
     try:
         # Map intent to API action
         intent_to_action = {
-            "add_user": "set",
+            "add_user":    "set",
+            "create_user": "set",
+            "update_user": "set",
             "delete_user": "delete",
-            "update_user": "set"
+            "remove_user": "delete",
+            "get_user":    "get",
         }
         
         if intent not in intent_to_action:

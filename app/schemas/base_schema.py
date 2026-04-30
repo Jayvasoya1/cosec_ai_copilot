@@ -79,16 +79,12 @@ class BaseSchema(ABC):
                 "partial": params
             }
         
-        # Check if all provided fields are valid
+        # Strip fields the schema doesn't know about (LLM may send extras)
         all_valid_fields = required + optional
-        invalid_fields = [f for f in params.keys() if f not in all_valid_fields]
-        
-        if invalid_fields:
-            logger.warning(f"Invalid fields for {self.group_name}.{action}: {invalid_fields}")
-            raise ValidationError(
-                f"Invalid fields: {invalid_fields}",
-                {"schema": self.group_name, "invalid_fields": invalid_fields}
-            )
+        unknown = [f for f in params if f not in all_valid_fields]
+        if unknown:
+            logger.warning(f"Stripping unknown fields for {self.group_name}.{action}: {unknown}")
+            params = {k: v for k, v in params.items() if k in all_valid_fields}
         
         # Validate field values
         for field, value in params.items():
