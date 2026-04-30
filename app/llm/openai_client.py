@@ -51,6 +51,11 @@ ACCESS SETTING:
 PANEL DETAILS:
 - get_panel_details (user, door, alarm, io_link, format) - Get panel summary counts (users, doors, alarms, IO-links). Pass filter flags to get only specific sections; omit all to get everything.
 
+PANEL DOOR LIST:
+- get_panel_door_list (pdid, format) - Get list of configured panel doors or specific door details. Pass pdid to fetch a particular panel door; omit it to retrieve all doors. Use format to specify response type (text or xml).
+
+COMMAND:
+- get_user_count () - Get total number of users configured in the device. Returns count of all users irrespective of active/inactive status.
 
 Examples:
 
@@ -121,17 +126,17 @@ def call_llm(user_input: str) -> str:
     """
     try:
         logger.debug(f"Calling LLM with input: {user_input}")
-        
+
         # If in mock mode and no API key, use simple intent parser
         if USE_MOCK and not client:
             return _mock_parse_intent(user_input)
-        
+
         if not client:
             raise IntentParsingError(
                 "LLM client not initialized",
                 {"user_input": user_input}
             )
-        
+
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
             temperature=0,
@@ -149,10 +154,10 @@ def call_llm(user_input: str) -> str:
             )
 
         result = response.choices[0].message.content.strip()
-        
+
         if DEBUG_MODE:
             logger.debug(f"LLM response: {result}")
-        
+
         return result
 
     except (RateLimitError, APIConnectionError) as e:
@@ -161,14 +166,14 @@ def call_llm(user_input: str) -> str:
             f"LLM service temporarily unavailable: {str(e)}",
             {"user_input": user_input, "error_type": type(e).__name__}
         )
-        
+
     except APIError as e:
         logger.error(f"LLM API error: {str(e)}")
         raise IntentParsingError(
             f"LLM API error: {str(e)}",
             {"user_input": user_input, "error_type": type(e).__name__}
         )
-        
+
     except Exception as e:
         logger.error(f"Unexpected error calling LLM: {str(e)}")
         raise IntentParsingError(
@@ -183,9 +188,9 @@ def _mock_parse_intent(user_input: str) -> str:
     Used when USE_MOCK=True and no API key is configured
     """
     import json
-    
+
     user_input_lower = user_input.lower()
-    
+
     # Mock mapping of user inputs to intents
     if "enroll" in user_input_lower or "enrollment" in user_input_lower:
         if "get" in user_input_lower or "show" in user_input_lower or "current" in user_input_lower:
@@ -221,7 +226,7 @@ def _mock_parse_intent(user_input: str) -> str:
                     "parameters": params
                 }]
             })
-    
+
     # User management intents
     if "add" in user_input_lower or "create" in user_input_lower:
         if "user" in user_input_lower:
@@ -242,6 +247,5 @@ def _mock_parse_intent(user_input: str) -> str:
                     }
                 }]
             })
-    
+
     # Nothing matched — return empty so caller treats as unrecognised input
-    return json.dumps({"tasks": []})

@@ -10,6 +10,8 @@ MEMORY_KEY_MAP = {
     "enroll-options": "last_enroll_options",
     "access-setting": "last_access_setting",
     "panel-details":  "last_panel_details",
+    "panel-door-list": "last_panel_door_list",
+    "command": "last_command"
 }
 
 
@@ -62,3 +64,10 @@ def resolve_enroll_options_params(action: str, params: Dict) -> Tuple[bool, Dict
 
 def resolve_access_setting_params(action: str, params: Dict) -> Tuple[bool, Dict]:
     return resolve_params_for_group("access-setting", action, params)
+
+
+def resolve_panel_door_list_params(action: str, params: Dict) -> Tuple[bool, Dict]:
+    return resolve_params_for_group("panel-door-list", action, params)
+
+def resolve_command_params(action: str, params: Dict) -> Tuple[bool, Dict]:
+    return resolve_params_for_group("command", action, params)
