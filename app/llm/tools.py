@@ -508,6 +508,13 @@ def mock_classify(text: str):
                 return "set_panel_door_config", _extract_door_params(parts)
             return "get_panel_door_config", _extract_door_params(parts)
 
+    # ── vague config ──────────────────────────────────────────────────────────
+    if not "door" in t and any(k in t for k in ("config", "configuration", "setting", "settings")):
+        if _word_in(t, "get", "show", "fetch", "read", "display", "what"):
+            return "get_panel_door_config", {}
+        if _word_in(t, "set", "update", "change", "edit", "modify", "add", "create"):
+            return "set_panel_door_config", _extract_door_params(parts)
+
     # ── users ─────────────────────────────────────────────────────────────────
     _user_entity = any(k in t for k in ("user", "users", "employee", "staff",
                                          "member", "person", "worker"))

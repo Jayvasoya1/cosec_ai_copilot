@@ -37,8 +37,9 @@ RULES
 1. Always call a tool when you detect any access-control intent — even with zero parameters extracted.
    Missing required fields are collected from the user automatically afterwards.
 2. Call multiple tools when the message contains multiple operations (e.g. "add user AND set finger count").
-3. Never respond in text. Only tool calls, or silence for completely off-topic input.
-4. Stay silent ONLY when the message has zero relevance to access control (pure greetings, random text, etc.).
+3. IMPORTANT: If the user lists multiple entities (e.g. "add user jay and ravi" or "delete user 1, 2, and 3"), you MUST output MULTIPLE tool calls of the same type, ONE FOR EACH ENTITY!
+4. Never respond in text. Only tool calls, or silence for completely off-topic input.
+5. Stay silent ONLY when the message has zero relevance to access control (pure greetings, random text, etc.).
 
 ━━━ TOOL SELECTION — map natural language to the correct tool ━━━
 
@@ -64,10 +65,12 @@ DOOR CONFIGURATION
   ⚠️  KEY DISAMBIGUATION: "set/configure/update/change door" = set_panel_door_config (WRITE operation)
                           "get/show/fetch/read door" = get_panel_door_config (READ operation)
   "set door configuration"      → set_panel_door_config  (NOT get!)
+  "set configuration"           → set_panel_door_config
   "configure door N"            → set_panel_door_config
   "update door settings"        → set_panel_door_config
   "change door name/IP/type"    → set_panel_door_config
   "show/get/fetch door config"  → get_panel_door_config
+  "get configuration"           → get_panel_door_config
   "what are door settings"      → get_panel_door_config
   get_default_panel_door_config → "get/show default door config"
   set_default_panel_door_config → "set/restore/change default door config"
@@ -142,16 +145,16 @@ def _keyword_fallback(user_text: str) -> list:
     # ── Vague-query fallbacks when mock_classify has no match ─────────────────
     if not new_tasks:
         t = user_text.lower()
-        # "get/show/fetch configuration" (no domain) → panel details overview
+        # "get/show/fetch configuration" (no domain) → get_panel_door_config
         if any(k in t for k in ("get", "show", "fetch", "read", "display")) and \
            any(k in t for k in ("config", "configuration", "setting", "settings", "info", "status", "details")):
             new_tasks.append({
-                "intent": "get_panel_details",
-                "group":  "panel-details",
+                "intent": "get_panel_door_config",
+                "group":  "panel-door-config",
                 "action": "get",
                 "params": {},
             })
-            logger.info("Vague 'get' query resolved to get_panel_details")
+            logger.info("Vague 'get' query resolved to get_panel_door_config")
 
     return new_tasks
 
@@ -231,6 +234,13 @@ def classify_node(state: CopilotState) -> dict:
         # causing inconsistent classification on repeated inputs.
         MAX_HISTORY = 10
         trimmed_history = list(state["messages"])[-MAX_HISTORY:]
+        
+        # Ensure we don't start with a tool message (orphaned from its AIMessage)
+        # or an AIMessage with tool_calls (missing its tool responses).
+        # Safest way is to keep dropping the oldest messages until we hit a HumanMessage.
+        while trimmed_history and getattr(trimmed_history[0], "type", "") != "human":
+            trimmed_history.pop(0)
+            
         messages  = [SystemMessage(content=SYSTEM_PROMPT)] + trimmed_history
         response: AIMessage = _get_llm().invoke(messages)
 
@@ -266,8 +276,18 @@ def classify_node(state: CopilotState) -> dict:
                 # LLM called only unknown tools — fall back to mock_classify
                 new_tasks = _keyword_fallback(user_text)
                 if not new_tasks:
-                    update.update(_unrecognised())
-                    return update
+                    if tasks and missing_fields:
+                        field       = missing_fields[0]
+                        new_partial = {**(state.get("partial_params") or {}), field: user_text.strip()}
+                        logger.info(f"LLM called unknown tools. Treating as continuation: '{field}' = '{user_text}'")
+                        update.update({
+                            "partial_params": new_partial,
+                            "missing_fields": [],
+                        })
+                        return update
+                    else:
+                        update.update(_unrecognised())
+                        return update
                 logger.info(f"LLM unknown-tool fallback → mock_classify: {[t['intent'] for t in new_tasks]}")
             else:
                 # Close the tool-call loop in message history
@@ -551,12 +571,18 @@ def respond_node(state: CopilotState) -> dict:
     # ── 2. Need more input ───────────────────────────────────────────────────
     if missing:
         question = generate_question(missing)
+        
+        if completed:
+            prefix = f"✅ Executed {len(completed)} task{'s' if len(completed) > 1 else ''}. "
+            question = prefix + question
+            
         return {
             "response_status":  "need_input",
             "response_message": question,
             "response_details": {
                 "missing_fields": missing,
                 "partial":        state.get("partial_params") or {},
+                "successes":      completed,
             },
         }
 
