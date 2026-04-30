@@ -109,7 +109,7 @@ def build_url(group: str, params: Dict) -> str:
 
 
             resp = call_device_api( f"/192.168.103.184/device.cgi/users?action=set&user-id={params_to_encode['user-id']}&enable-fr=1")
-            resp = call_device_api(f"/192.168.103.184/device.cgi/fr-settings?action=set&pdid={params_to_encode["pdid"]}&enable=1")
+            resp = call_device_api(f"/192.168.103.184/device.cgi/fr-settings?action=set&pdid={params_to_encode['pdid']}&enable=1")
         
         # URL encode parameters
         query_parts = []
