@@ -38,7 +38,7 @@ PARAM_MAP: dict = {
     "validity_date_yyyy": "validity-date-yyyy",
     "validity_time_hh":   "validity-time-hh",
     "validity_time_mm":   "validity-time-mm",
-    # enroll-user
+    # enrolluser
     # access-setting
     "week_day":      "week-day",
     "work_start_hh": "work-start-hh",
@@ -72,8 +72,8 @@ TOOL_TO_GROUP_ACTION: dict = {
     "update_user": ("users", "set"),
     "delete_user": ("users", "delete"),
     "get_user":    ("users", "get"),
-    # enroll-user
-    "enroll_user": ("enroll-user", "enroll"),
+    # enrolluser
+    "enroll_user": ("enrolluser", "enroll"),
     # access-setting
     "get_access_setting":         ("access-setting", "get"),
     "set_access_setting":         ("access-setting", "set"),
