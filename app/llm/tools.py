@@ -11,6 +11,7 @@ only provides some values (e.g. "set finger count to 5" → only enroll_finger_c
 The schema-level required-field check happens in validate_node, not here.
 """
 
+import re
 from typing import Optional
 from langchain_core.tools import tool
 
@@ -104,19 +105,34 @@ TOOL_TO_GROUP_ACTION: dict = {
 
 @tool
 def add_user(
-    user_id: Optional[str] = None,
-    name:    Optional[str] = None,
+    user_id:     Optional[str] = None,
+    name:        Optional[str] = None,
+    user_pin:    Optional[str] = None,
+    user_active: Optional[str] = None,
+    user_group:  Optional[str] = None,
 ) -> str:
-    """Add a new user to the COSEC access control system."""
+    """
+    Add / create / register a new user in the COSEC access control system.
+    Use for: "add user", "create user", "register user", "new user", "enroll employee".
+    Extract: user_id (numeric id), name (person's name), user_pin if given,
+    user_active (1=active 0=inactive), user_group (group number 0-999).
+    """
     return "dispatched"
 
 
 @tool
 def update_user(
-    user_id: Optional[str] = None,
-    name:    Optional[str] = None,
+    user_id:     Optional[str] = None,
+    name:        Optional[str] = None,
+    user_pin:    Optional[str] = None,
+    user_active: Optional[str] = None,
+    user_group:  Optional[str] = None,
 ) -> str:
-    """Update an existing user's name or details in the COSEC system."""
+    """
+    Update / edit / modify an existing user's details in the COSEC system.
+    Use for: "update user", "edit user", "change user name", "rename user", "modify user".
+    Extract: user_id (which user), name (new name), and any other fields being changed.
+    """
     return "dispatched"
 
 
@@ -124,15 +140,24 @@ def update_user(
 def delete_user(
     user_id: Optional[str] = None,
 ) -> str:
-    """Delete (remove) a user from the COSEC system by their user ID."""
+    """
+    Delete / remove / deactivate a user from the COSEC system.
+    Use for: "delete user", "remove user", "deactivate user", "erase user".
+    Extract: user_id from any number mentioned or "user <id>" pattern.
+    """
     return "dispatched"
 
 
 @tool
 def get_user(
     user_id: Optional[str] = None,
+    name:    Optional[str] = None,
 ) -> str:
-    """Retrieve user information from the COSEC system."""
+    """
+    Retrieve / fetch / look up user information from the COSEC system.
+    Use for: "get user", "show user", "find user", "fetch user", "who is user", "look up user".
+    Extract: user_id if a number is mentioned, name if searching by name.
+    """
     return "dispatched"
 
 
@@ -140,7 +165,11 @@ def get_user(
 def get_enroll_options(
     format: Optional[str] = None,
 ) -> str:
-    """Get the current enrollment configuration options from the device."""
+    """
+    Get the current biometric enrollment settings from the COSEC device.
+    Use for: "get enroll options", "show enrollment settings", "what is the finger count",
+    "check enroll config", "show biometric settings".
+    """
     return "dispatched"
 
 
@@ -154,7 +183,13 @@ def set_enroll_options(
     enroll_mode:         Optional[str] = None,
     format:              Optional[str] = None,
 ) -> str:
-    """Set enrollment options on the COSEC device (finger count, palm count, card count, mode, etc.)."""
+    """
+    Set / change / update biometric enrollment options on the COSEC device.
+    Use for: "set enroll options", "change finger count", "set finger count to N",
+    "update enroll settings", "set enrollment mode".
+    Extract: enroll_finger_count ("3 fingers" or "finger count 3" → "3"),
+    enroll_mode ("dual mode"/"dual template" → "1", "single mode" → "0").
+    """
     return "dispatched"
 
 
@@ -162,7 +197,10 @@ def set_enroll_options(
 def get_default_enroll_options(
     format: Optional[str] = None,
 ) -> str:
-    """Get the factory-default enrollment configuration from the device."""
+    """
+    Get the factory-default enrollment configuration from the COSEC device.
+    Use for: "get default enroll", "show factory enroll settings", "default enrollment config".
+    """
     return "dispatched"
 
 
@@ -175,7 +213,10 @@ def set_default_enroll_options(
     enroll_using:        Optional[str] = None,
     enroll_mode:         Optional[str] = None,
 ) -> str:
-    """Set the default enrollment options on the COSEC device."""
+    """
+    Set / restore the default enrollment options on the COSEC device.
+    Use for: "set default enroll options", "restore default enrollment settings".
+    """
     return "dispatched"
 
 
@@ -188,7 +229,11 @@ def get_access_setting(
     work_end_mm:   Optional[str] = None,
     format:        Optional[str] = None,
 ) -> str:
-    """Get the current access time settings (work hours, week day) from the device."""
+    """
+    Get the current access time / work hour settings from the COSEC device.
+    Use for: "get access settings", "show work hours", "what time does work start",
+    "check timing", "what are the access times", "show schedule".
+    """
     return "dispatched"
 
 
@@ -201,7 +246,15 @@ def set_access_setting(
     work_end_mm:   Optional[str] = None,
     format:        Optional[str] = None,
 ) -> str:
-    """Set the access time settings (work start/end hours and minutes, week day) on the device."""
+    """
+    Set / update / configure work hours and access time settings on the COSEC device.
+    Use for: "set access", "change work hours", "update start time", "set work time to HH:MM",
+    "set work start at 9", "change end time to 6 PM".
+    Always split time into HH and MM fields. Convert 12-hour to 24-hour.
+    "start at 9" → work_start_hh="9", work_start_mm="0".
+    "end at 5 PM" → work_end_hh="17", work_end_mm="0".
+    Weekday: Sunday=0 Monday=1 Tuesday=2 Wednesday=3 Thursday=4 Friday=5 Saturday=6.
+    """
     return "dispatched"
 
 
@@ -209,7 +262,10 @@ def set_access_setting(
 def get_default_access_setting(
     format: Optional[str] = None,
 ) -> str:
-    """Get the factory-default access time settings from the device."""
+    """
+    Get the factory-default access time / work hour settings from the COSEC device.
+    Use for: "get default access settings", "show default work hours", "factory access config".
+    """
     return "dispatched"
 
 
@@ -221,7 +277,10 @@ def set_default_access_setting(
     work_end_hh:   Optional[str] = None,
     work_end_mm:   Optional[str] = None,
 ) -> str:
-    """Set the default access time settings on the COSEC device."""
+    """
+    Set / restore the default access time settings on the COSEC device.
+    Use for: "set default access settings", "restore default work hours".
+    """
     return "dispatched"
 
 
@@ -233,15 +292,24 @@ def get_panel_details(
     io_link: Optional[str] = None,
     format:  Optional[str] = None,
 ) -> str:
-    """Get panel summary counts: total users, doors, alarms, and IO-links on the device."""
+    """
+    Get panel / device summary: total users, doors, alarms, and IO-links on the COSEC device.
+    Use for: "panel details", "panel info", "device summary", "how many users/doors/alarms",
+    "panel status", "show device counts", "what is on the panel".
+    """
     return "dispatched"
+
 
 @tool
 def get_panel_door_config(
     door_id: Optional[str] = None,
     format:  Optional[str] = None,
 ) -> str:
-    """Get configuration of a specific door using door ID (pdid)."""
+    """
+    Get configuration / settings of a specific door on the COSEC device.
+    Use for: "get door config", "show door N settings", "door configuration", "door info".
+    Extract: door_id from "door 2", "door id 2", or any number next to "door".
+    """
     return "dispatched"
 
 
@@ -255,7 +323,11 @@ def set_panel_door_config(
     mac_address:        Optional[str] = None,
     format:             Optional[str] = None,
 ) -> str:
-    """Set door configuration (name, type, communication mode, IP, MAC) on the device."""
+    """
+    Set / update / configure a door on the COSEC device (name, type, IP address, MAC, etc.).
+    Use for: "set door config", "configure door N", "update door name/IP/type",
+    "change door settings", "set door 2 name to MainGate".
+    """
     return "dispatched"
 
 
@@ -263,7 +335,10 @@ def set_panel_door_config(
 def get_default_panel_door_config(
     format: Optional[str] = None,
 ) -> str:
-    """Get default door configuration settings from the device."""
+    """
+    Get the default / factory door configuration settings from the COSEC device.
+    Use for: "get default door config", "show default door settings", "factory door config".
+    """
     return "dispatched"
 
 
@@ -275,7 +350,10 @@ def set_default_panel_door_config(
     ip_address:         Optional[str] = None,
     mac_address:        Optional[str] = None,
 ) -> str:
-    """Set default door configuration values on the device."""
+    """
+    Set / restore the default door configuration values on the COSEC device.
+    Use for: "set default door config", "restore default door settings".
+    """
     return "dispatched"
 # ── Tool list exported to nodes.py ───────────────────────────────────────────
 
@@ -300,78 +378,140 @@ ALL_TOOLS = [
 ]
 
 
+# ── Time / weekday helpers ────────────────────────────────────────────────────
+
+def _apply_ampm(hh: int, period: str) -> int:
+    """Convert 12-hour hour + AM/PM to 24-hour integer."""
+    if period == "pm" and hh != 12:
+        return hh + 12
+    if period == "am" and hh == 12:
+        return 0
+    return hh
+
+
+def _parse_time(text: str):
+    """
+    Extract (hh_str, mm_str) from a time expression, or return None.
+    Handles: "9:00", "09:30 AM", "5:30pm", "9am", "9 o'clock".
+    """
+    # HH:MM with optional AM/PM
+    m = re.search(r"\b(\d{1,2}):(\d{2})\s*(am|pm)?\b", text, re.IGNORECASE)
+    if m:
+        hh = _apply_ampm(int(m.group(1)), (m.group(3) or "").lower())
+        return str(hh), str(int(m.group(2)))
+    # H am/pm (no colon)
+    m = re.search(r"\b(\d{1,2})\s*(am|pm)\b", text, re.IGNORECASE)
+    if m:
+        hh = _apply_ampm(int(m.group(1)), m.group(2).lower())
+        return str(hh), "0"
+    # "at N" / "from N" bare number in context
+    m = re.search(r"\b(?:at|from|start|begin)\s+(\d{1,2})\b", text, re.IGNORECASE)
+    if m:
+        hh = int(m.group(1))
+        if 0 <= hh <= 23:
+            return str(hh), "0"
+    return None
+
+
+def _parse_weekday(text: str):
+    """Map day name to COSEC week-day number string (Sunday=0 … Saturday=6)."""
+    DAYS = {
+        "sunday": "0", "sun": "0",
+        "monday": "1", "mon": "1",
+        "tuesday": "2", "tue": "2",
+        "wednesday": "3", "wed": "3",
+        "thursday": "4", "thu": "4",
+        "friday": "5", "fri": "5",
+        "saturday": "6", "sat": "6",
+    }
+    t = text.lower()
+    for name, num in DAYS.items():
+        if re.search(r"\b" + name + r"\b", t):
+            return num
+    return None
+
+
 # ── Mock classifier (used when USE_MOCK=True and no API key) ─────────────────
+
+def _word_in(text: str, *words) -> bool:
+    """True if any word appears as a whole word (not substring) in text."""
+    return any(bool(re.search(r"\b" + w + r"\b", text)) for w in words)
+
 
 def mock_classify(text: str):
     """
-    Keyword-based intent classifier used in mock mode (no OpenAI key needed).
+    Keyword-based intent classifier for mock mode (no LLM key needed).
     Returns (tool_name, normalised_params) or (None, {}) if unrecognised.
     """
-    t = text.lower()
+    t = text.lower().strip()
     parts = text.split()
 
-    # ── panel details ──
-    if "panel" in t and ("detail" in t or "summary" in t or "count" in t):
+    # ── panel details (check before door to avoid conflict on "door") ─────────
+    if "panel" in t and any(k in t for k in ("detail", "summary", "count", "info", "status", "how many")):
         params = {}
-        if "user" in t:  params["user"]  = "1"
-        if "door" in t:  params["door"]  = "1"
-        if "alarm" in t: params["alarm"] = "1"
-        if "io" in t:    params["io-link"] = "1"
+        if "user" in t:    params["user"]    = "1"
+        if "door" in t:    params["door"]    = "1"
+        if "alarm" in t:   params["alarm"]   = "1"
+        if "io" in t:      params["io-link"] = "1"
         return "get_panel_details", params
 
-    # ── enroll ──
-    if "enroll" in t or "enrollment" in t:
+    # ── door config ───────────────────────────────────────────────────────────
+    if "door" in t and any(k in t for k in ("config", "configuration", "setting")):
         if "default" in t:
-            if "set" in t:
+            if _word_in(t, "set", "update", "change", "restore"):
+                return "set_default_panel_door_config", _extract_door_params(parts)
+            return "get_default_panel_door_config", {}
+        if _word_in(t, "set", "update", "change", "configure", "edit"):
+            return "set_panel_door_config", _extract_door_params(parts)
+        return "get_panel_door_config", _extract_door_params(parts)
+
+    # ── users (before enroll — "enroll/register employee" = add_user) ─────────
+    _user_entity = any(k in t for k in ("user", "employee", "staff", "member"))
+
+    if _word_in(t, "delete", "remove", "deactivate", "erase") and _user_entity:
+        uid = next((p for p in parts if p.isdigit()), None)
+        return "delete_user", ({"user-id": uid} if uid else {})
+
+    if _word_in(t, "update", "edit", "rename", "modify") and _user_entity:
+        return "update_user", _extract_user_params(parts)
+
+    if _word_in(t, "add", "create", "register", "enroll") and _user_entity:
+        return "add_user", _extract_user_params(parts)
+
+    if "new" in t and _user_entity and not _word_in(t, "get", "show", "find"):
+        return "add_user", _extract_user_params(parts)
+
+    if _word_in(t, "get", "show", "find", "fetch", "retrieve", "list", "look") and _user_entity:
+        uid = next((p for p in parts if p.isdigit()), None)
+        return "get_user", ({"user-id": uid} if uid else {})
+
+    # ── enroll biometric options ───────────────────────────────────────────────
+    if any(k in t for k in ("enroll", "enrollment", "biometric", "finger count", "palm count", "card count")):
+        if "default" in t:
+            if _word_in(t, "set", "update", "change", "restore"):
                 return "set_default_enroll_options", _extract_enroll_params(t, parts)
             return "get_default_enroll_options", {}
-        if "set" in t:
+        if _word_in(t, "set", "update", "change"):
             return "set_enroll_options", _extract_enroll_params(t, parts)
         return "get_enroll_options", {}
 
-    # ── access setting ──
-    if "access" in t and ("setting" in t or "time" in t or "hour" in t):
+    # ── access setting ────────────────────────────────────────────────────────
+    _access_phrase = any(k in t for k in ("access setting", "access time", "work hour", "work time",
+                                           "start time", "end time", "work start", "work end", "schedule"))
+    _access_loose  = "access" in t and any(k in t for k in ("setting", "time", "hour", "schedule"))
+
+    if _access_phrase or _access_loose:
         if "default" in t:
-            if "set" in t:
+            if _word_in(t, "set", "update", "change", "restore"):
                 return "set_default_access_setting", _extract_access_params(t, parts)
             return "get_default_access_setting", {}
-        if "set" in t:
+        if _word_in(t, "set", "update", "change", "configure"):
             return "set_access_setting", _extract_access_params(t, parts)
         return "get_access_setting", {}
 
-    # ── users ──
-    if "delete" in t or "remove" in t:
-        if "user" in t:
-            uid = next((p for p in parts if p.isdigit()), None)
-            return "delete_user", {"user-id": uid} if uid else {}
-
-    if "update" in t or "change" in t or "rename" in t:
-        if "user" in t:
-            params = _extract_user_params(parts)
-            return "update_user", params
-
-    if "add" in t or "create" in t or "new" in t:
-        if "user" in t:
-            params = _extract_user_params(parts)
-            return "add_user", params
-
-    if "get" in t or "show" in t or "find" in t or "list" in t:
-        if "user" in t:
-            uid = next((p for p in parts if p.isdigit()), None)
-            return "get_user", {"user-id": uid} if uid else {}
-
-    if "door" in t and ("config" in t or "configuration" in t):
-        if "default" in t:
-            if "set" in t:
-                return "set_default_panel_door_config", _extract_door_params(parts)
-            return "get_default_panel_door_config", {}
-        if "set" in t or "update" in t:
-            return "set_panel_door_config", _extract_door_params(parts)
-        return "get_panel_door_config", _extract_door_params(parts)
     return None, {}
 
-# ── panel door config ──
-    
+
 
 
 def _extract_user_params(parts: list) -> dict:
@@ -410,17 +550,40 @@ def _extract_enroll_params(t: str, parts: list) -> dict:
 
 def _extract_access_params(t: str, parts: list) -> dict:
     params = {}
-    nums = [p for p in parts if p.isdigit()]
-    if "start" in t and len(nums) >= 2:
-        params["work-start-hh"] = nums[0]
-        params["work-start-mm"] = nums[1]
-    elif "end" in t and len(nums) >= 2:
-        params["work-end-hh"] = nums[0]
-        params["work-end-mm"] = nums[1]
-    elif len(nums) >= 1:
-        params["work-start-hh"] = nums[0]
-        if len(nums) >= 2:
-            params["work-start-mm"] = nums[1]
+
+    # Weekday
+    day = _parse_weekday(t)
+    if day is not None:
+        params["week-day"] = day
+
+    # Collect all time mentions in order (HH:MM or H am/pm or bare H)
+    all_times = []
+    for m in re.finditer(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", t, re.IGNORECASE):
+        hh = int(m.group(1))
+        mm = int(m.group(2)) if m.group(2) else 0
+        period = (m.group(3) or "").lower()
+        hh = _apply_ampm(hh, period)
+        if 0 <= hh <= 23 and 0 <= mm <= 59:
+            all_times.append((str(hh), str(mm)))
+
+    has_start = any(k in t for k in ("start", "from", "begin", "open"))
+    has_end   = any(k in t for k in ("end", "to", "until", "close", "finish"))
+
+    if len(all_times) >= 2:
+        # Two distinct times → first is start, second is end
+        params["work-start-hh"] = all_times[0][0]
+        params["work-start-mm"] = all_times[0][1]
+        params["work-end-hh"]   = all_times[1][0]
+        params["work-end-mm"]   = all_times[1][1]
+    elif len(all_times) == 1:
+        hh, mm = all_times[0]
+        if has_end and not has_start:
+            params["work-end-hh"] = hh
+            params["work-end-mm"] = mm
+        else:
+            params["work-start-hh"] = hh
+            params["work-start-mm"] = mm
+
     return params
 
 
