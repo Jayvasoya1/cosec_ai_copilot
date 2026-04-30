@@ -306,8 +306,10 @@ def get_panel_door_config(
     format:  Optional[str] = None,
 ) -> str:
     """
-    Get configuration / settings of a specific door on the COSEC device.
-    Use for: "get door config", "show door N settings", "door configuration", "door info".
+    READ / retrieve / fetch the current configuration of a specific door (READ-ONLY operation).
+    Use for: "get door config", "show door N settings", "read door config", "what is door N config",
+    "fetch door info", "display door settings".
+    Do NOT use when the user wants to change, set, update, or configure a door.
     Extract: door_id from "door 2", "door id 2", or any number next to "door".
     """
     return "dispatched"
@@ -324,9 +326,12 @@ def set_panel_door_config(
     format:             Optional[str] = None,
 ) -> str:
     """
-    Set / update / configure a door on the COSEC device (name, type, IP address, MAC, etc.).
-    Use for: "set door config", "configure door N", "update door name/IP/type",
-    "change door settings", "set door 2 name to MainGate".
+    WRITE / set / configure / update a door's settings on the COSEC device (WRITE operation).
+    Use for: "set door config", "configure door N", "set door configuration",
+    "update door settings", "change door name/IP/type", "set door 2 name to MainGate".
+    ALWAYS use this tool (not get_panel_door_config) when the user says:
+    set, configure, update, change, modify, edit — for a door.
+    Extract: door_id (which door), then any of door_name, door_type, ip_address, mac_address.
     """
     return "dispatched"
 
@@ -456,14 +461,19 @@ def mock_classify(text: str):
         return "get_panel_details", params
 
     # ── door config ───────────────────────────────────────────────────────────
-    if "door" in t and any(k in t for k in ("config", "configuration", "setting")):
-        if "default" in t:
-            if _word_in(t, "set", "update", "change", "restore"):
-                return "set_default_panel_door_config", _extract_door_params(parts)
-            return "get_default_panel_door_config", {}
-        if _word_in(t, "set", "update", "change", "configure", "edit"):
-            return "set_panel_door_config", _extract_door_params(parts)
-        return "get_panel_door_config", _extract_door_params(parts)
+    if "door" in t:
+        _door_write = _word_in(t, "set", "update", "change", "configure", "edit", "modify", "restore")
+        _door_read  = (_word_in(t, "get", "show", "fetch", "read", "display", "find", "list", "what")
+                       or any(k in t for k in ("config", "configuration", "setting", "info", "detail")))
+
+        if _door_write or _door_read:
+            if "default" in t:
+                if _door_write:
+                    return "set_default_panel_door_config", _extract_door_params(parts)
+                return "get_default_panel_door_config", {}
+            if _door_write:
+                return "set_panel_door_config", _extract_door_params(parts)
+            return "get_panel_door_config", _extract_door_params(parts)
 
     # ── users (before enroll — "enroll/register employee" = add_user) ─────────
     _user_entity = any(k in t for k in ("user", "employee", "staff", "member"))

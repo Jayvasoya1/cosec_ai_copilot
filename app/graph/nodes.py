@@ -63,10 +63,16 @@ PANEL DETAILS (device summary counts)
   get_panel_details → "panel details", "device summary/info", "how many users/doors/alarms on the panel"
 
 DOOR CONFIGURATION
-  get_panel_door_config         → "get door config", "show door N settings", "door configuration"
-  set_panel_door_config         → "set/update/configure door N", "change door name/IP/type"
-  get_default_panel_door_config → "get default door config"
-  set_default_panel_door_config → "set/restore default door config"
+  ⚠️  KEY DISAMBIGUATION: "set/configure/update/change door" = set_panel_door_config (WRITE operation)
+                          "get/show/fetch/read door" = get_panel_door_config (READ operation)
+  "set door configuration"      → set_panel_door_config  (NOT get!)
+  "configure door N"            → set_panel_door_config
+  "update door settings"        → set_panel_door_config
+  "change door name/IP/type"    → set_panel_door_config
+  "show/get/fetch door config"  → get_panel_door_config
+  "what are door settings"      → get_panel_door_config
+  get_default_panel_door_config → "get/show default door config"
+  set_default_panel_door_config → "set/restore/change default door config"
 
 ━━━ PARAMETER EXTRACTION RULES ━━━
 
@@ -115,6 +121,45 @@ def _get_llm():
     return _llm_with_tools
 
 
+# ── Keyword fallback (used when LLM returns no / unknown tool calls) ─────────
+
+def _keyword_fallback(user_text: str) -> list:
+    """
+    Run mock_classify on the user message as a safety net.
+    Supports multiple intents separated by 'and'.
+    Also handles vague queries like 'get configuration' → panel details.
+    Returns a list of task dicts ready for the task queue, or [].
+    """
+    new_tasks = []
+    parts = [p.strip() for p in user_text.lower().split(" and ")]
+    for part in parts:
+        tool_name, raw_params = mock_classify(part)
+        if tool_name and tool_name in TOOL_TO_GROUP_ACTION:
+            group, action = TOOL_TO_GROUP_ACTION[tool_name]
+            new_tasks.append({
+                "intent": tool_name,
+                "group":  group,
+                "action": action,
+                "params": raw_params,
+            })
+
+    # ── Vague-query fallbacks when mock_classify has no match ─────────────────
+    if not new_tasks:
+        t = user_text.lower()
+        # "get/show/fetch configuration" (no domain) → panel details overview
+        if any(k in t for k in ("get", "show", "fetch", "read", "display")) and \
+           any(k in t for k in ("config", "configuration", "setting", "settings", "info", "status", "details")):
+            new_tasks.append({
+                "intent": "get_panel_details",
+                "group":  "panel-details",
+                "action": "get",
+                "params": {},
+            })
+            logger.info("Vague 'get' query resolved to get_panel_details")
+
+    return new_tasks
+
+
 # ── Node 1: classify ─────────────────────────────────────────────────────────
 
 def classify_node(state: CopilotState) -> dict:
@@ -122,9 +167,10 @@ def classify_node(state: CopilotState) -> dict:
     Classify the user's latest message.
 
     Priority order:
-      1. LLM tool call detected  → new command(s), resets task queue
-      2. No tool call + tasks    → continuation: fill missing[0] with user answer for tasks[0]
-      3. Neither                 → unrecognised input
+      1. LLM tool call detected        → new command(s), resets task queue
+      2. No LLM tool call + tasks      → continuation: fill missing[0] with user's answer
+      3. No LLM tool call, no tasks    → mock_classify fallback (keyword safety net)
+      4. Neither LLM nor keyword match → unrecognised input
     """
     tasks           = state.get("tasks") or []
     missing_fields  = state.get("missing_fields") or []
@@ -170,7 +216,11 @@ def classify_node(state: CopilotState) -> dict:
             return update
 
         # ── Real LLM tool calling ───────────────────────────────────────────
-        messages  = [SystemMessage(content=SYSTEM_PROMPT)] + list(state["messages"])
+        # Keep only the most recent turns to prevent stale context from
+        # causing inconsistent classification on repeated inputs.
+        MAX_HISTORY = 10
+        trimmed_history = list(state["messages"])[-MAX_HISTORY:]
+        messages  = [SystemMessage(content=SYSTEM_PROMPT)] + trimmed_history
         response: AIMessage = _get_llm().invoke(messages)
 
         # Always add the LLM response to conversation history
@@ -188,7 +238,7 @@ def classify_node(state: CopilotState) -> dict:
                 if tool_name not in TOOL_TO_GROUP_ACTION:
                     logger.warning(f"LLM called unknown tool: {tool_name}")
                     continue
-                
+
                 group, action = TOOL_TO_GROUP_ACTION[tool_name]
                 new_tasks.append({
                     "intent": tool_name,
@@ -202,13 +252,17 @@ def classify_node(state: CopilotState) -> dict:
                 ))
 
             if not new_tasks:
-                update.update(_unrecognised())
-                return update
+                # LLM called only unknown tools — fall back to mock_classify
+                new_tasks = _keyword_fallback(user_text)
+                if not new_tasks:
+                    update.update(_unrecognised())
+                    return update
+                logger.info(f"LLM unknown-tool fallback → mock_classify: {[t['intent'] for t in new_tasks]}")
+            else:
+                # Close the tool-call loop in message history
+                update["messages"].extend(tool_msgs)
 
             logger.info(f"Tool calls extracted {len(new_tasks)} tasks")
-
-            # Add ToolMessages to close the tool-call loop
-            update["messages"].extend(tool_msgs)
 
             # Check if this is a continuation where the LLM just re-issued the pending tool call
             if tasks and missing_fields and len(new_tasks) == 1 and new_tasks[0]["intent"] == tasks[0]["intent"]:
@@ -244,9 +298,19 @@ def classify_node(state: CopilotState) -> dict:
             })
 
         else:
-            # ── Unrecognised ────────────────────────────────────────────────
-            logger.info("No tool call and no pending state — input not recognised")
-            update.update(_unrecognised())
+            # ── LLM returned no tool call — try mock_classify as safety net ─
+            new_tasks = _keyword_fallback(user_text)
+            if new_tasks:
+                logger.info(f"LLM no-tool fallback → mock_classify: {[t['intent'] for t in new_tasks]}")
+                update.update({
+                    "tasks": new_tasks,
+                    "partial_params": {},
+                    "missing_fields": [],
+                    "completed_results": [],
+                })
+            else:
+                logger.info("No tool call and no pending state — input not recognised")
+                update.update(_unrecognised())
 
     except Exception as e:
         logger.error(f"classify_node error: {e}", exc_info=DEBUG_MODE)
@@ -424,7 +488,14 @@ def respond_node(state: CopilotState) -> dict:
     if not tasks and not missing and not result and not completed:
         return {
             "response_status":  "error",
-            "response_message": "Could not understand your request. Please try again with a clearer command.",
+            "response_message": (
+                "I couldn't understand that request. Please be more specific. Try:\n"
+                "• Users → \"add user Jay with id 5\", \"delete user 3\", \"get user 10\"\n"
+                "• Door config → \"set door 1 configuration\", \"get door 2 config\"\n"
+                "• Enroll → \"set finger count to 3\", \"get enroll options\"\n"
+                "• Access → \"set work start at 9:00\", \"get access settings\"\n"
+                "• Panel → \"get panel details\""
+            ),
             "response_details": {"reason": "no_intent_detected"},
         }
 

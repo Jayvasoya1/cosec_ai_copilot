@@ -21,7 +21,7 @@ class PanelDoorConfigSchema(BaseSchema):
         "set": {
             "description": "Set door configuration",
             "required": [
-                         "door-name",
+                "door-name",
                 "door-type",
                 "ip-address",
                 "mac-address",

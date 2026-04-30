@@ -70,20 +70,32 @@ def build_url(group: str, params: Dict) -> str:
                 params_to_encode["user-active"] = "1"
         
         if group == "panel-door-config" and params.get("action") == "set":
-            # ref-user-id should reference the user-id being set
             logger.info(f"Building URL for panel-door-config set with params: {params_to_encode}")
-            if "door-name" not in params_to_encode:
-                params_to_encode["door-name"] = params_to_encode["door-type"] + str(config.PDID + 1)
+
+            # Normalize door-type string to numeric device code (if provided)
             if "door-type" in params_to_encode:
-                if params_to_encode["door-type"].lower() == "argo face":
-                     params_to_encode["door-type"] = "21"
-                elif params_to_encode["door-type"].lower() == "vega":
-                     params_to_encode["door-type"] = "9"
-            params_to_encode["communication-type"] = "0"
-            params_to_encode["pdid"] = config.PDID + 1
-            config.PDID += 1
-            # user-active defaults to 1 (active)
-            params_to_encode["active"] = "1"
+                dtype = str(params_to_encode["door-type"]).lower()
+                if dtype == "argo face":
+                    params_to_encode["door-type"] = "21"
+                elif dtype == "vega":
+                    params_to_encode["door-type"] = "9"
+
+            # Auto-generate door-name only when not provided AND door-type is known
+            if "door-name" not in params_to_encode and "door-type" in params_to_encode:
+                params_to_encode["door-name"] = (
+                    params_to_encode["door-type"] + str(params_to_encode.get("pdid", ""))
+                )
+
+            # Apply defaults only for fields not already specified by the user
+            if "communication-type" not in params_to_encode:
+                params_to_encode["communication-type"] = "0"
+            if "active" not in params_to_encode:
+                params_to_encode["active"] = "1"
+
+            # Respect user-provided pdid; fall back to auto-counter only if absent
+            if "pdid" not in params_to_encode:
+                params_to_encode["pdid"] = config.PDID + 1
+                config.PDID += 1
         
         # URL encode parameters
         query_parts = []
