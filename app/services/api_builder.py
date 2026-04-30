@@ -8,7 +8,7 @@ from urllib.parse import urlencode, quote
 from app.exceptions import APIBuildError
 from app.schemas.registry import schema_registry
 from app.logger import logger
-
+import app.config as config
 
 def build_url(group: str, params: Dict) -> str:
     """
@@ -68,6 +68,22 @@ def build_url(group: str, params: Dict) -> str:
             # user-active defaults to 1 (active)
             if "user-active" not in params_to_encode:
                 params_to_encode["user-active"] = "1"
+        
+        if group == "panel-door-config" and params.get("action") == "set":
+            # ref-user-id should reference the user-id being set
+            logger.info(f"Building URL for panel-door-config set with params: {params_to_encode}")
+            if "door-name" not in params_to_encode:
+                params_to_encode["door-name"] = params_to_encode["door-type"] + str(config.PDID + 1)
+            if "door-type" in params_to_encode:
+                if params_to_encode["door-type"].lower() == "argo face":
+                     params_to_encode["door-type"] = "21"
+                elif params_to_encode["door-type"].lower() == "vega":
+                     params_to_encode["door-type"] = "9"
+
+            params_to_encode["pdid"] = config.PDID + 1
+            config.PDID += 1
+            # user-active defaults to 1 (active)
+            params_to_encode["active"] = "1"
         
         # URL encode parameters
         query_parts = []

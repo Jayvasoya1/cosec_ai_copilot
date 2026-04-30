@@ -24,6 +24,7 @@ DEBUG_MODE = os.getenv("DEBUG_MODE", "False").lower() == "true"
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", 3))
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))
 
+PDID=0
 
 def validate_config():
     """Validate critical configuration"""

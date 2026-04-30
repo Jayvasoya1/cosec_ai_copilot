@@ -54,6 +54,12 @@ PARAM_MAP: dict = {
     "io_link": "io-link",
     # common
     "id_format": "format",
+    "door_id":             "pdid",
+    "door_name":           "door-name",
+    "door_type":           "door-type",
+    "communication_type":  "communication-type",
+    "ip_address":          "ip-address",
+    "mac_address":         "mac-address",
 }
 
 
@@ -83,6 +89,11 @@ TOOL_TO_GROUP_ACTION: dict = {
     "set_default_access_setting": ("access-setting", "setdefault"),
     # panel-details
     "get_panel_details": ("panel-details", "get"),
+    # panel-door-config
+    "get_panel_door_config":         ("panel-door-config", "get"),
+    "set_panel_door_config":         ("panel-door-config", "set"),
+    "get_default_panel_door_config": ("panel-door-config", "getdefault"),
+    "set_default_panel_door_config": ("panel-door-config", "setdefault"),
 }
 
 
@@ -225,7 +236,47 @@ def get_panel_details(
     """Get panel summary counts: total users, doors, alarms, and IO-links on the device."""
     return "dispatched"
 
+@tool
+def get_panel_door_config(
+    door_id: Optional[str] = None,
+    format:  Optional[str] = None,
+) -> str:
+    """Get configuration of a specific door using door ID (pdid)."""
+    return "dispatched"
 
+
+@tool
+def set_panel_door_config(
+    door_id:            Optional[str] = None,
+    door_name:          Optional[str] = None,
+    door_type:          Optional[str] = None,
+    communication_type: Optional[str] = None,
+    ip_address:         Optional[str] = None,
+    mac_address:        Optional[str] = None,
+    format:             Optional[str] = None,
+) -> str:
+    """Set door configuration (name, type, communication mode, IP, MAC) on the device."""
+    return "dispatched"
+
+
+@tool
+def get_default_panel_door_config(
+    format: Optional[str] = None,
+) -> str:
+    """Get default door configuration settings from the device."""
+    return "dispatched"
+
+
+@tool
+def set_default_panel_door_config(
+    door_name:          Optional[str] = None,
+    door_type:          Optional[str] = None,
+    communication_type: Optional[str] = None,
+    ip_address:         Optional[str] = None,
+    mac_address:        Optional[str] = None,
+) -> str:
+    """Set default door configuration values on the device."""
+    return "dispatched"
 # ── Tool list exported to nodes.py ───────────────────────────────────────────
 
 ALL_TOOLS = [
@@ -242,6 +293,10 @@ ALL_TOOLS = [
     get_default_access_setting,
     set_default_access_setting,
     get_panel_details,
+    get_panel_door_config,
+    set_panel_door_config,
+    get_default_panel_door_config,
+    set_default_panel_door_config,
 ]
 
 
@@ -305,7 +360,18 @@ def mock_classify(text: str):
             uid = next((p for p in parts if p.isdigit()), None)
             return "get_user", {"user-id": uid} if uid else {}
 
+    if "door" in t and ("config" in t or "configuration" in t):
+        if "default" in t:
+            if "set" in t:
+                return "set_default_panel_door_config", _extract_door_params(parts)
+            return "get_default_panel_door_config", {}
+        if "set" in t or "update" in t:
+            return "set_panel_door_config", _extract_door_params(parts)
+        return "get_panel_door_config", _extract_door_params(parts)
     return None, {}
+
+# ── panel door config ──
+    
 
 
 def _extract_user_params(parts: list) -> dict:
@@ -355,4 +421,30 @@ def _extract_access_params(t: str, parts: list) -> dict:
         params["work-start-hh"] = nums[0]
         if len(nums) >= 2:
             params["work-start-mm"] = nums[1]
+    return params
+
+
+
+def _extract_door_params(parts: list) -> dict:
+    params = {}
+
+    for i, p in enumerate(parts):
+        pl = p.lower()
+
+        if pl in ("door", "id", "door-id") and i + 1 < len(parts):
+            if parts[i + 1].isdigit():
+                params["pdid"] = parts[i + 1]
+
+        if pl == "name" and i + 1 < len(parts):
+            params["door-name"] = parts[i + 1]
+
+        if pl == "ip" and i + 1 < len(parts):
+            params["ip-address"] = parts[i + 1]
+
+        if pl == "mac" and i + 1 < len(parts):
+            params["mac-address"] = parts[i + 1]
+
+        if p.isdigit() and "pdid" not in params:
+            params["pdid"] = p
+
     return params

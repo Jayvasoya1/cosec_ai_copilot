@@ -11,6 +11,7 @@ from schemas.access_setting_schema import access_setting_schema
 from schemas.panel_details_schema import panel_details_schema
 from schemas.panel_door_list_schema import panel_door_list_schema
 from schemas.command_schema import command_schema
+from schemas.panel_door_config_schema import panel_door_config_schema
 from app.exceptions import SchemaError
 from app.logger import logger
 
@@ -37,6 +38,7 @@ class SchemaRegistry:
         self.register("access-setting", access_setting_schema)
         self.register("panel-details", panel_details_schema)
         self.register("panel-door-list",panel_door_list_schema)
+        self.register("panel-door-config", panel_door_config_schema)
         self.register("command",command_schema)
         logger.info("Schema registry initialized with default schemas")
     
