@@ -33,14 +33,14 @@ def call_device_api(url: str) -> dict:
     full_url = f"http:/{url}"
     logger.debug(f"Making API call to: {full_url}")
     
+    # import os
+    # curl_executable = "curl.exe" if os.name == "nt" else "curl"
+    
     # Build curl command with digest auth
     curl_cmd = [
         "curl.exe",
-        "-s",  # Silent mode - no progress or error information
         "--digest",
         "-u", f"{DEVICE_USERNAME}:{DEVICE_PASSWORD}",
-        "-w", "\n%{http_code}",  # Append HTTP status code to output
-        "--max-time", str(DEVICE_TIMEOUT),
         full_url
     ]
     

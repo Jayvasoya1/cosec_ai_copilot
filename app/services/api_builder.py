@@ -9,6 +9,7 @@ from app.exceptions import APIBuildError
 from app.schemas.registry import schema_registry
 from app.logger import logger
 import app.config as config
+from app.services.device_api import call_device_api
 
 def build_url(group: str, params: Dict) -> str:
     """
@@ -96,6 +97,19 @@ def build_url(group: str, params: Dict) -> str:
             if "pdid" not in params_to_encode:
                 params_to_encode["pdid"] = config.PDID + 1
                 config.PDID += 1
+                
+        if group == "enroll-options" and params.get("action") == "enroll":
+            logger.info(f"Building URL for enroll-options enroll with params: {params_to_encode}")
+
+
+            params_to_encode["face-count"] = "1"
+
+
+            params_to_encode["type"] = "7"
+
+
+            resp = call_device_api( f"/192.168.103.184/device.cgi/users?action=set&user-id={params_to_encode['user-id']}&enable-fr=1")
+            resp = call_device_api(f"/192.168.103.184/device.cgi/fr-settings?action=set&pdid={params_to_encode["pdid"]}&enable=1")
         
         # URL encode parameters
         query_parts = []

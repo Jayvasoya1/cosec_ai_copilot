@@ -47,11 +47,8 @@ USERS
   delete_user   → "delete / remove / deactivate / erase user"
   get_user      → "get / show / find / fetch / look up / retrieve user info"
 
-ENROLL OPTIONS (biometric enrollment — fingerprint, palm, card)
-  get_enroll_options         → "get/show enroll options", "what is the finger count"
-  set_enroll_options         → "set/change/update enroll options", "set finger count to N"
-  get_default_enroll_options → "get/show default enroll settings", "factory enroll config"
-  set_default_enroll_options → "set/restore default enroll options"
+ENROLL OPTIONS
+  enroll_user                → "enroll user", "enroll user on door N"
 
 ACCESS SETTINGS (work hours / time schedule)
   get_access_setting         → "get access settings", "show work hours", "what time does work start/end"
@@ -63,20 +60,16 @@ PANEL DETAILS (device summary counts)
   get_panel_details → "panel details", "device summary/info", "how many users/doors/alarms on the panel"
 
 DOOR CONFIGURATION
-  ⚠️  DISAMBIGUATION: "set/configure/update/change door" = set_panel_door_config (WRITE)
-                      "get/show/fetch/read door"         = get_panel_door_config (READ)
-  "set door configuration"      → set_panel_door_config   (requires: name, type, IP, MAC)
-  "configure door"              → set_panel_door_config
+  ⚠️  KEY DISAMBIGUATION: "set/configure/update/change door" = set_panel_door_config (WRITE operation)
+                          "get/show/fetch/read door" = get_panel_door_config (READ operation)
+  "set door configuration"      → set_panel_door_config  (NOT get!)
+  "configure door N"            → set_panel_door_config
   "update door settings"        → set_panel_door_config
   "change door name/IP/type"    → set_panel_door_config
-  "get/show/fetch door config"  → get_panel_door_config   (requires: door ID)
+  "show/get/fetch door config"  → get_panel_door_config
   "what are door settings"      → get_panel_door_config
   get_default_panel_door_config → "get/show default door config"
   set_default_panel_door_config → "set/restore/change default door config"
-
-  set_panel_door_config NEEDS these 4 fields (will be asked if missing):
-    door_name, door_type, ip_address, mac_address
-  get_panel_door_config NEEDS: door_id (which door to read)
 
 ━━━ PARAMETER EXTRACTION RULES ━━━
 
@@ -98,15 +91,11 @@ Time — ALWAYS split into separate HH and MM fields. Convert 12-hour to 24-hour
 Weekday numbers:  Sunday=0  Monday=1  Tuesday=2  Wednesday=3  Thursday=4  Friday=5  Saturday=6
 
 Enroll
-  "3 fingers" / "finger count 3"    → enroll_finger_count="3"
-  "dual mode" / "dual template"     → enroll_mode="1"
-  "single mode" / "single template" → enroll_mode="0"
+  "enroll user 5 on door 2"         → user_id="5", pdid="2"
 
-Door extraction (for get only — door_id for set is auto-assigned by the system)
-  "get door 2" / "door id 2"  → door_id="2"
-  "name MainGate"              → door_name="MainGate"
-  "type vega"                  → door_type="vega"
-  "ip 192.168.1.50"            → ip_address="192.168.1.50"
+Door
+  "door 2" / "door id 2"  → door_id="2"
+  "name MainGate"          → door_name="MainGate"
 """
 
 
@@ -498,7 +487,7 @@ def respond_node(state: CopilotState) -> dict:
                 "I couldn't understand that request. Please be more specific. Try:\n"
                 "• Users → \"add user Jay with id 5\", \"delete user 3\", \"get user 10\"\n"
                 "• Door config → \"set door 1 configuration\", \"get door 2 config\"\n"
-                "• Enroll → \"set finger count to 3\", \"get enroll options\"\n"
+                "• Enroll → \"enroll user 5 on door 2\"\n"
                 "• Access → \"set work start at 9:00\", \"get access settings\"\n"
                 "• Panel → \"get panel details\""
             ),

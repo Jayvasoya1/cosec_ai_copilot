@@ -39,12 +39,6 @@ PARAM_MAP: dict = {
     "validity_time_hh":   "validity-time-hh",
     "validity_time_mm":   "validity-time-mm",
     # enroll-options
-    "enroll_finger_count": "enroll-finger-count",
-    "enroll_palm_count":   "enroll-palm-count",
-    "enroll_card_count":   "enroll-card-count",
-    "enroll_on_device":    "enroll-on-device",
-    "enroll_using":        "enroll-using",
-    "enroll_mode":         "enroll-mode",
     # access-setting
     "week_day":      "week-day",
     "work_start_hh": "work-start-hh",
@@ -79,10 +73,7 @@ TOOL_TO_GROUP_ACTION: dict = {
     "delete_user": ("users", "delete"),
     "get_user":    ("users", "get"),
     # enroll-options
-    "get_enroll_options":         ("enroll-options", "get"),
-    "set_enroll_options":         ("enroll-options", "set"),
-    "get_default_enroll_options": ("enroll-options", "getdefault"),
-    "set_default_enroll_options": ("enroll-options", "setdefault"),
+    "enroll_user": ("enroll-options", "enroll"),
     # access-setting
     "get_access_setting":         ("access-setting", "get"),
     "set_access_setting":         ("access-setting", "set"),
@@ -113,7 +104,7 @@ def add_user(
 ) -> str:
     """
     Add / create / register a new user in the COSEC access control system.
-    Use for: "add user", "create user", "register user", "new user", "enroll employee".
+    Use for: "add user", "create user", "register user", "new user".
     Extract: user_id (numeric id), name (person's name), user_pin if given,
     user_active (1=active 0=inactive), user_group (group number 0-999).
     """
@@ -162,60 +153,14 @@ def get_user(
 
 
 @tool
-def get_enroll_options(
-    format: Optional[str] = None,
+def enroll_user(
+    pdid: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> str:
     """
-    Get the current biometric enrollment settings from the COSEC device.
-    Use for: "get enroll options", "show enrollment settings", "what is the finger count",
-    "check enroll config", "show biometric settings".
-    """
-    return "dispatched"
-
-
-@tool
-def set_enroll_options(
-    enroll_finger_count: Optional[str] = None,
-    enroll_palm_count:   Optional[str] = None,
-    enroll_card_count:   Optional[str] = None,
-    enroll_on_device:    Optional[str] = None,
-    enroll_using:        Optional[str] = None,
-    enroll_mode:         Optional[str] = None,
-    format:              Optional[str] = None,
-) -> str:
-    """
-    Set / change / update biometric enrollment options on the COSEC device.
-    Use for: "set enroll options", "change finger count", "set finger count to N",
-    "update enroll settings", "set enrollment mode".
-    Extract: enroll_finger_count ("3 fingers" or "finger count 3" → "3"),
-    enroll_mode ("dual mode"/"dual template" → "1", "single mode" → "0").
-    """
-    return "dispatched"
-
-
-@tool
-def get_default_enroll_options(
-    format: Optional[str] = None,
-) -> str:
-    """
-    Get the factory-default enrollment configuration from the COSEC device.
-    Use for: "get default enroll", "show factory enroll settings", "default enrollment config".
-    """
-    return "dispatched"
-
-
-@tool
-def set_default_enroll_options(
-    enroll_finger_count: Optional[str] = None,
-    enroll_palm_count:   Optional[str] = None,
-    enroll_card_count:   Optional[str] = None,
-    enroll_on_device:    Optional[str] = None,
-    enroll_using:        Optional[str] = None,
-    enroll_mode:         Optional[str] = None,
-) -> str:
-    """
-    Set / restore the default enrollment options on the COSEC device.
-    Use for: "set default enroll options", "restore default enrollment settings".
+    Enroll a user on a specific panel door device.
+    Use for: "enroll user", "enroll user on door N".
+    Extract: pdid (door id or panel door id), user_id (user id).
     """
     return "dispatched"
 
@@ -368,10 +313,7 @@ ALL_TOOLS = [
     update_user,
     delete_user,
     get_user,
-    get_enroll_options,
-    set_enroll_options,
-    get_default_enroll_options,
-    set_default_enroll_options,
+    enroll_user,
     get_access_setting,
     set_access_setting,
     get_default_access_setting,
@@ -486,7 +428,7 @@ def mock_classify(text: str):
     if _word_in(t, "update", "edit", "rename", "modify") and _user_entity:
         return "update_user", _extract_user_params(parts)
 
-    if _word_in(t, "add", "create", "register", "enroll") and _user_entity:
+    if _word_in(t, "add", "create", "register") and _user_entity:
         return "add_user", _extract_user_params(parts)
 
     if "new" in t and _user_entity and not _word_in(t, "get", "show", "find"):
@@ -497,14 +439,9 @@ def mock_classify(text: str):
         return "get_user", ({"user-id": uid} if uid else {})
 
     # ── enroll biometric options ───────────────────────────────────────────────
-    if any(k in t for k in ("enroll", "enrollment", "biometric", "finger count", "palm count", "card count")):
-        if "default" in t:
-            if _word_in(t, "set", "update", "change", "restore"):
-                return "set_default_enroll_options", _extract_enroll_params(t, parts)
-            return "get_default_enroll_options", {}
-        if _word_in(t, "set", "update", "change"):
-            return "set_enroll_options", _extract_enroll_params(t, parts)
-        return "get_enroll_options", {}
+    if "enroll" in t:
+        params = {**_extract_door_params(parts), **_extract_user_params(parts)}
+        return "enroll_user", params
 
     # ── access setting ────────────────────────────────────────────────────────
     _access_phrase = any(k in t for k in ("access setting", "access time", "work hour", "work time",
@@ -540,23 +477,7 @@ def _extract_user_params(parts: list) -> dict:
     return params
 
 
-def _extract_enroll_params(t: str, parts: list) -> dict:
-    params = {}
-    for i, p in enumerate(parts):
-        if p.isdigit():
-            if "finger" in t:
-                params["enroll-finger-count"] = p
-            elif "palm" in t:
-                params["enroll-palm-count"] = p
-            elif "card" in t:
-                params["enroll-card-count"] = p
-            elif "mode" in t:
-                params["enroll-mode"] = p
-    if "dual" in t:
-        params["enroll-mode"] = "1"
-    if "single" in t:
-        params["enroll-mode"] = "0"
-    return params
+
 
 
 def _extract_access_params(t: str, parts: list) -> dict:

@@ -13,13 +13,7 @@ FIELD_QUESTIONS = {
     "validity-date-yyyy": "What is the validity year? (e.g. 2025)",
     "validity-time-hh":   "What is the validity hour? (0–23)",
     "validity-time-mm":   "What is the validity minute? (0–59)",
-    # enroll fields
-    "enroll-finger-count": "How many fingers should be enrolled? (1–10)",
-    "enroll-palm-count":   "How many palms should be enrolled? (1–2)",
-    "enroll-card-count":   "How many cards should be enrolled? (1–5)",
-    "enroll-on-device":    "Should enrollment happen on the device? Reply 1 for yes or 0 for no.",
-    "enroll-using":        "Should enrollment use a numeric (0) or alphanumeric (1) ID?",
-    "enroll-mode":         "Which enroll mode? Reply 0 for single template or 1 for dual template.",
+
     # access-setting fields
     "week-day":      "Which day of the week? (0 = Sunday, 1 = Monday, … 6 = Saturday)",
     "work-start-hh": "What hour should work start? (0–23, 24-hour format)",
