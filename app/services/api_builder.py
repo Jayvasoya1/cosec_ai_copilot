@@ -88,7 +88,8 @@ def build_url(group: str, params: Dict) -> str:
         # URL encode parameters
         query_parts = []
         for key, value in params_to_encode.items():
-            encoded_value = quote(str(value), safe='')
+            # Keep colons safe for MAC addresses (e.g., 00:11:22:33:44:55)
+            encoded_value = quote(str(value), safe=':')
             query_parts.append(f"{key}={encoded_value}")
         
         query_string = "&".join(query_parts)
