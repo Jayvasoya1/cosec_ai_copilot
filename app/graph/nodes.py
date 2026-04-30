@@ -275,25 +275,53 @@ def classify_node(state: CopilotState) -> dict:
 
             logger.info(f"Tool calls extracted {len(new_tasks)} tasks")
 
-            # Check if this is a continuation where the LLM just re-issued the pending tool call
-            if tasks and missing_fields and len(new_tasks) == 1 and new_tasks[0]["intent"] == tasks[0]["intent"]:
-                logger.info(f"LLM re-issued pending task {tasks[0]['intent']}. Merging params and continuing queue.")
+            # ── Continuation detection ─────────────────────────────────────
+            # Case A: LLM re-issued the exact same pending task — merge its params.
+            # Case B: missing_fields exist but user's reply is NOT a standalone new
+            #   command (e.g. just "3", "Jay", "yes") — the LLM misread it as a
+            #   different tool. Treat it as a continuation answer for the first
+            #   missing field and keep the task queue intact.
+            _pending_continuation = tasks and missing_fields
+            _same_intent = (
+                _pending_continuation
+                and len(new_tasks) == 1
+                and new_tasks[0]["intent"] == tasks[0]["intent"]
+            )
+            _misread_answer = (
+                _pending_continuation
+                and not _same_intent
+                and not _looks_like_new_command(user_text)
+            )
+
+            if _same_intent:
+                logger.info(f"LLM re-issued pending task {tasks[0]['intent']}. Merging params.")
                 merged_params = {
                     **(state.get("partial_params") or {}),
-                    **new_tasks[0]["params"]
+                    **new_tasks[0]["params"],
                 }
                 update.update({
                     "partial_params": merged_params,
                     "missing_fields": [],
-                    # We do NOT touch tasks or completed_results, so the queue continues!
+                })
+            elif _misread_answer:
+                # LLM mapped the answer to the wrong tool — override and fill the field.
+                field       = missing_fields[0]
+                new_partial = {**(state.get("partial_params") or {}), field: user_text.strip()}
+                logger.info(
+                    f"LLM misread continuation answer as {new_tasks[0]['intent']}. "
+                    f"Filling '{field}' = '{user_text.strip()}' and keeping queue."
+                )
+                update.update({
+                    "partial_params": new_partial,
+                    "missing_fields": [],
                 })
             else:
-                # Completely new command (or user changed their mind)
+                # Genuinely new command (or user explicitly changed their mind).
                 update.update({
-                    "tasks": new_tasks,
-                    "partial_params": {}, # Start fresh for new commands
-                    "missing_fields": [],
-                    "completed_results": [], # New batch
+                    "tasks":             new_tasks,
+                    "partial_params":    {},
+                    "missing_fields":    [],
+                    "completed_results": [],
                 })
 
         elif tasks and missing_fields:
@@ -588,3 +616,24 @@ def _unrecognised() -> dict:
         "completed_results": [],
         "execution_result": None,
     }
+
+
+# Action verbs that signal a standalone new command rather than a field answer.
+_COMMAND_VERBS = frozenset({
+    "add", "create", "register", "update", "edit", "modify", "change", "rename",
+    "delete", "remove", "deactivate", "erase", "get", "show", "fetch", "retrieve",
+    "list", "find", "display", "view", "set", "configure", "restore", "reset",
+    "enroll",
+})
+
+
+def _looks_like_new_command(text: str) -> bool:
+    """
+    Return True when the text contains a clear action verb that indicates the
+    user is starting a new command rather than answering a pending question.
+
+    Short values ("3", "Jay", "9:00 AM"), simple confirmations ("yes", "no"),
+    and answers without action words all return False → treated as continuation.
+    """
+    words = set(text.lower().split())
+    return bool(words & _COMMAND_VERBS)
