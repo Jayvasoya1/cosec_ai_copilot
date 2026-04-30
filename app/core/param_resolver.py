@@ -6,9 +6,10 @@ from app.logger import logger, log_parameter_resolution
 
 
 MEMORY_KEY_MAP = {
-    "users": "last_user",
+    "users":          "last_user",
     "enroll-options": "last_enroll_options",
     "access-setting": "last_access_setting",
+    "panel-details":  "last_panel_details",
 }
 
 

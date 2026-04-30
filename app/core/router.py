@@ -8,6 +8,7 @@ from app.logger import logger
 from handlers.user_handler import handle_user_intent
 from handlers.enroll_options_handler import handle_enroll_options_intent
 from handlers.access_setting_handler import handle_access_setting_intent
+from handlers.panel_details_handler import handle_panel_details_intent
 
 class HandlerRegistry:
     """Registry for intent handlers"""
@@ -24,6 +25,7 @@ class HandlerRegistry:
         self.register_entity("user", handle_user_intent)
         self.register_entity("enroll_options", handle_enroll_options_intent)
         self.register_entity("access_setting", handle_access_setting_intent)
+        self.register_entity("panel_details", handle_panel_details_intent)
         logger.info("Handler registry initialized with default handlers")
     
     def register_entity(self, entity_name: str, handler):

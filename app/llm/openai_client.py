@@ -48,6 +48,9 @@ ACCESS SETTING:
 - get_default_access_setting (format) - Get default access settings
 - set_default_access_setting (week_day, work_start_hh, work_start_mm, work_end_hh, work_end_mm) - Set default access settings
 
+PANEL DETAILS:
+- get_panel_details (user, door, alarm, io_link, format) - Get panel summary counts (users, doors, alarms, IO-links). Pass filter flags to get only specific sections; omit all to get everything.
+
 
 Examples:
 

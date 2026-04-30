@@ -8,6 +8,7 @@ from app.schemas.base_schema import BaseSchema
 from schemas.user_schema import user_schema
 from schemas.enroll_options_schema import enroll_options_schema
 from schemas.access_setting_schema import access_setting_schema
+from schemas.panel_details_schema import panel_details_schema
 from app.exceptions import SchemaError
 from app.logger import logger
 
@@ -31,7 +32,8 @@ class SchemaRegistry:
         """Register built-in schemas"""
         self.register("users", user_schema)
         self.register("enroll-options", enroll_options_schema)
-        self.register("access-setting",access_setting_schema)
+        self.register("access-setting", access_setting_schema)
+        self.register("panel-details", panel_details_schema)
         logger.info("Schema registry initialized with default schemas")
     
     def register(self, group_name: str, schema: BaseSchema):
