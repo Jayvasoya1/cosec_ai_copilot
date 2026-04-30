@@ -100,27 +100,12 @@ function appendBotMsg(text, status, details) {
   scrollBottom();
 }
 
-function buildExtra(status, details) {
+function buildExtra(_status, details) {
   if (!details) return '';
   let html = '';
 
   const successes = details.successes || [];
-  if (successes.length > 0) {
-    html += '<div class="api-list">';
-    for (const s of successes) {
-      if (s.url) {
-        const cls = s.mock ? 'mock' : 'real';
-        const lbl = s.mock ? '🧪 MOCK' : '🌐 API';
-        html += `<div class="api-row"><div class="api-pill ${cls}">${lbl}: ${esc(s.url)}</div></div>`;
-        
-        if (s.response) {
-          const respText = typeof s.response === 'object' ? JSON.stringify(s.response, null, 2) : String(s.response);
-          html += `<div class="api-response">${esc(respText)}</div>`;
-        }
-      }
-    }
-    html += '</div>';
-  }
+  successes.forEach(s => { html += buildResponsePanel(s); });
 
   const missing = details.missing_fields || [];
   if (missing.length > 0) {
@@ -129,6 +114,60 @@ function buildExtra(status, details) {
   }
 
   return html;
+}
+
+function buildResponsePanel(s) {
+  if (!s.url) return '';
+
+  const isMock    = s.mock;
+  const typeCls   = isMock ? 'mock' : 'real';
+  const typeLabel = isMock ? '🧪 Mock' : '🌐 API';
+
+  let html = `<div class="resp-panel ${typeCls}">`;
+
+  // Header: badge + URL + optional HTTP status code
+  html += `<div class="resp-header">
+    <span class="resp-badge ${typeCls}">${typeLabel}</span>
+    <span class="resp-url">${esc(s.url)}</span>`;
+
+  if (s.device_status) {
+    const ok = s.device_status >= 200 && s.device_status < 300;
+    html += `<span class="resp-status ${ok ? 'ok' : 'err'}">${s.device_status}</span>`;
+  }
+
+  html += `</div>`;
+
+  // Response body
+  const respText = formatResponse(s.response);
+  if (respText !== null) {
+    html += `<div class="resp-body" data-resp="${esc(respText)}">
+      <div class="resp-toolbar">
+        <span class="resp-label">Response</span>
+        <button class="copy-btn" onclick="copyResponse(this)">📋 Copy</button>
+      </div>
+      <pre class="resp-pre">${esc(respText)}</pre>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function formatResponse(resp) {
+  if (resp === undefined || resp === null) return null;
+  if (typeof resp === 'object') return JSON.stringify(resp, null, 2);
+  const s = String(resp);
+  try { return JSON.stringify(JSON.parse(s), null, 2); } catch { return s; }
+}
+
+function copyResponse(btn) {
+  const body = btn.closest('.resp-body');
+  if (!body) return;
+  navigator.clipboard.writeText(body.dataset.resp).then(() => {
+    const prev = btn.textContent;
+    btn.textContent = '✅ Copied';
+    setTimeout(() => { btn.textContent = prev; }, 1800);
+  }).catch(() => {});
 }
 
 // ── Typing indicator ─────────────────────────────────────────────────────────
