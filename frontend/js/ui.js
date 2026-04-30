@@ -84,14 +84,20 @@ function appendBotMsg(text, status, details) {
   const row = document.createElement('div');
   row.className = 'msg-row bot';
 
+  const isChatbotHelp = details && details.type === 'chatbot_help';
   const icon  = STATUS_ICON[status]  || 'ℹ️';
   const extra = buildExtra(status, details);
+
+  // chatbot_help responses arrive as trusted HTML from our own backend — render directly.
+  const msgContent = isChatbotHelp
+    ? text
+    : `<span>${icon} ${esc(text)}</span>`;
 
   row.innerHTML = `
     <div class="av bot">🔒</div>
     <div class="msg-body">
       <div class="bubble bot ${esc(status)}">
-        <span>${icon} ${esc(text)}</span>
+        ${msgContent}
         ${extra}
       </div>
       <div class="ts">${time()} · ${STATUS_LABEL[status] || status}</div>

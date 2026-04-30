@@ -21,6 +21,7 @@ from app.graph.state import CopilotState
 from app.llm.tools import ALL_TOOLS, TOOL_TO_GROUP_ACTION, normalise_params, mock_classify
 from app.schemas.registry import schema_registry
 from app.core.question_engine import generate_question
+from app.core.chatbot import detect_help_intent, generate_help_response
 from app.services.api_builder import build_url
 from app.services.device_api import call_device_api
 from app.config import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TIMEOUT, USE_MOCK, DEBUG_MODE
@@ -171,7 +172,22 @@ def classify_node(state: CopilotState) -> dict:
     missing_fields  = state.get("missing_fields") or []
     user_text       = state["messages"][-1].content if state.get("messages") else ""
 
-    update: dict = {"execution_result": None}   # reset execution result each turn
+    # ── Chatbot help intent: answer before any LLM / API logic ───────────────
+    help_result = detect_help_intent(user_text)
+    if help_result:
+        query_type, target = help_result
+        logger.info(f"Chatbot help intent: type={query_type}, target={target}")
+        return {
+            "tasks":            [],
+            "missing_fields":   [],
+            "partial_params":   {},
+            "completed_results":[],
+            "execution_result": None,
+            "chatbot_mode":     True,
+            "chatbot_response": generate_help_response(query_type, target),
+        }
+
+    update: dict = {"execution_result": None, "chatbot_mode": False, "chatbot_response": ""}  # reset each turn
 
     try:
         # ── Mock mode: use keyword classifier ──────────────────────────────
@@ -478,6 +494,16 @@ def respond_node(state: CopilotState) -> dict:
     missing = state.get("missing_fields") or []
     result  = state.get("execution_result")
     completed = state.get("completed_results") or []
+
+    # ── 0. Chatbot help mode — return pre-built response immediately ─────────
+    if state.get("chatbot_mode") and state.get("chatbot_response"):
+        return {
+            "response_status":  "success",
+            "response_message": state["chatbot_response"],
+            "response_details": {"type": "chatbot_help"},
+            "chatbot_mode":     False,
+            "chatbot_response": "",
+        }
 
     # ── 1. Unrecognised ──────────────────────────────────────────────────────
     if not tasks and not missing and not result and not completed:

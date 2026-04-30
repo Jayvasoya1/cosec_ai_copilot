@@ -34,6 +34,10 @@ class CopilotState(TypedDict):
     completed_results: List[Dict]   # Results for successfully completed tasks in the current batch
     execution_result: Optional[Dict] # Kept for single-step errors during execute
 
+    # ── Chatbot help mode (set by classify_node, consumed by respond_node) ─────
+    chatbot_mode:     bool  # True when the chatbot help engine handled the query
+    chatbot_response: str   # Pre-built help text; respond_node returns it as-is
+
     # ── Final response (set by respond_node, consumed by main.py) ───────────
     response_status:  str   # "success" | "error" | "need_input" | "partial_success"
     response_message: str
