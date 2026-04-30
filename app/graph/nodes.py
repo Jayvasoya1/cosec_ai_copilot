@@ -390,14 +390,28 @@ def respond_node(state: CopilotState) -> dict:
             "mock": result.get("mock", False),
         }
         # Include device response if available (non-mock execution)
-        if result.get("response"):
-            success_details["device_response"] = result.get("response")
-        if result.get("device_status"):
-            success_details["http_status"] = result.get("device_status")
+        device_response = result.get("response")
+        http_status = result.get("device_status")
+        
+        if device_response:
+            success_details["device_response"] = device_response
+        if http_status:
+            success_details["http_status"] = http_status
+        
+        # Format message with device response if available
+        message = result.get("message", "✅ Command executed successfully")
+        if device_response:
+            # Limit response to 500 chars for display, add ellipsis if longer
+            response_preview = device_response[:500] if len(device_response) > 500 else device_response
+            if len(device_response) > 500:
+                response_preview += "..."
+            message += f"\n\n**Device Response:**\n{response_preview}"
+        if http_status:
+            message += f"\n\n**HTTP Status:** {http_status}"
         
         return {
             "response_status":  "success",
-            "response_message": result.get("message", "✅ Command executed successfully"),
+            "response_message": message,
             "response_details": {
                 "successes":      [success_details],
                 "missing_fields": [],
