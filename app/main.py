@@ -5,7 +5,6 @@ Orchestrates the complete request-response flow
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from app.config import validate_config, DEBUG_MODE
@@ -40,15 +39,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Serve UI
-_STATIC_DIR = "app/static"
-app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
-
-@app.get("/", response_class=FileResponse, include_in_schema=False)
-def serve_ui():
-    return FileResponse(f"{_STATIC_DIR}/index.html")
-
 
 class ChatQuery(BaseModel):
     """User query model"""
@@ -180,6 +170,11 @@ def chat(query: ChatQuery):
                 "error_message": str(e) if DEBUG_MODE else None
             }
         )
+
+
+# Mount frontend LAST — API routes registered above take priority over static files.
+# html=True means StaticFiles serves index.html for / and unknown paths.
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
 
 if __name__ == "__main__":

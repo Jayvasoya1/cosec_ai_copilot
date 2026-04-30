@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CoSec AI Copilot</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">🔒</div>
+    <div>
+      <div class="header-title">CoSec AI Copilot</div>
+      <div class="header-sub">Access Control Assistant</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="badge" id="pendingBadge" style="display:none">
+      <div class="dot pending-dot"></div>
+      <span>Awaiting answer</span>
+    </div>
+    <div class="badge" id="apiBadge">
+      <div class="dot pulse" id="apiDot"></div>
+      <span id="apiText">Connecting…</span>
+    </div>
+    <button class="icon-btn" title="Clear chat" onclick="clearChat()">🗑</button>
+  </div>
+</div>
+
+<!-- ── CHAT ── -->
+<div class="chat-wrap" id="chatWrap">
+  <div class="chat-inner" id="chatInner">
+
+    <!-- Welcome screen (removed by ui.js on first message) -->
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">🔒</div>
+      <div class="welcome-title">CoSec AI Copilot</div>
+      <div class="welcome-desc">
+        Control your COSEC access devices using natural language.
+        Type a command below or pick a suggestion.
+      </div>
+      <div class="chips">
+        <div class="chip" onclick="sendSuggestion('Add user Jay with id 101')">➕ Add user</div>
+        <div class="chip" onclick="sendSuggestion('Delete user with id 5')">🗑 Delete user</div>
+        <div class="chip" onclick="sendSuggestion('Get enroll options')">📋 Get enroll options</div>
+        <div class="chip" onclick="sendSuggestion('Set enroll finger count to 3')">✏️ Set enroll options</div>
+        <div class="chip" onclick="sendSuggestion('Get access setting')">🔑 Get access setting</div>
+        <div class="chip" onclick="sendSuggestion('Set access setting work start at 9 00')">⏰ Set access time</div>
+        <div class="chip" onclick="sendSuggestion('Get panel details')">📊 Panel details</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── INPUT ── -->
+<div class="input-area">
+  <div class="input-inner">
+    <div class="pending-banner" id="pendingBanner">
+      ⏳ <strong>Follow-up:</strong> type your answer — or type a new command to start fresh
+    </div>
+    <div class="input-row">
+      <div class="textarea-wrap">
+        <textarea
+          id="inputBox"
+          rows="1"
+          placeholder="Type a command…  e.g. 'Add user Jay with id 101'"
+          onkeydown="handleKey(event)"
+          oninput="resize(this)"
+        ></textarea>
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        Send <span>↑</span>
+      </button>
+    </div>
+    <div class="hint-row">
+      <span>Enter to send &nbsp;·&nbsp; Shift+Enter for new line</span>
+      <span id="charCount"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Load order matters: config → api → ui → app -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
