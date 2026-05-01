@@ -521,6 +521,74 @@ textarea::placeholder { color: var(--muted); }
   color: var(--muted);
 }
 
+/* ── Response Code result (real API) ── */
+.rc-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 7px 11px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.rc-row.rc-ok {
+  background: rgba(34,197,94,.1);
+  border: 1px solid rgba(34,197,94,.3);
+  color: var(--green);
+}
+
+.rc-row.rc-unknown {
+  background: rgba(100,116,139,.08);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.rc-tick { font-weight: 700; font-size: 13px; }
+
+.rc-err-box {
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(239,68,68,.45);
+  background: rgba(239,68,68,.07);
+  white-space: normal;
+  overflow: hidden;
+}
+
+.rc-err-header {
+  padding: 9px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rc-code {
+  font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--red);
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.rc-desc {
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+/* Inline RC result inside mock dev panel */
+.resp-rc {
+  padding: 0 10px 2px;
+}
+.resp-rc .rc-row,
+.resp-rc .rc-err-box {
+  margin-top: 6px;
+}
+
 /* ── Chatbot help card ── */
 .ch-card {
   display: flex;

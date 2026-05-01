@@ -3,7 +3,7 @@
  * No business logic here — only "how things look"
  */
 
-const STATUS_ICON = { success: '', error: '', need_input: '🔔', partial_success: '⚠️' };
+const STATUS_ICON  = { success: '✅', error: '❌', need_input: '🔔', partial_success: '⚠️' };
 const STATUS_LABEL = { success: 'Success', error: 'Error', need_input: 'Input needed', partial_success: 'Partial success' };
 
 const CHIPS_HTML = `
@@ -83,7 +83,7 @@ function appendBotMsg(text, status, details) {
   row.className = 'msg-row bot';
 
   const isChatbotHelp = details && details.type === 'chatbot_help';
-  const icon = STATUS_ICON[status] || '';
+  const icon  = STATUS_ICON[status]  || 'ℹ️';
   const extra = buildExtra(status, details);
 
   // chatbot_help responses arrive as trusted HTML from our own backend — render directly.
@@ -120,33 +120,67 @@ function buildExtra(_status, details) {
   return html;
 }
 
+// ── Response code helpers ─────────────────────────────────────────────────────
+
+function extractResponseCode(resp) {
+  if (resp == null) return null;
+  const str = typeof resp === 'object' ? JSON.stringify(resp) : String(resp);
+  const m = str.match(/Response-Code\s*=\s*(\d+)/i)
+         || str.match(/"Response-Code"\s*:\s*(\d+)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function buildRcResult(code) {
+  if (code === null) return '';
+  if (isSuccessCode(code)) {
+    return `<div class="rc-row rc-ok"><span class="rc-tick">✓</span> Response-Code 0 — Successful</div>`;
+  }
+  const desc = getResponseDesc(code);
+  return `<div class="rc-err-box">
+    <div class="rc-err-header">
+      <span class="rc-code">Code ${code}</span>
+      <span class="rc-desc">${esc(desc)}</span>
+    </div>
+  </div>`;
+}
+
+// ── Response panel ────────────────────────────────────────────────────────────
+
 function buildResponsePanel(s) {
   if (!s.url) return '';
 
-  const isMock = s.mock;
-  const typeCls = isMock ? 'mock' : 'real';
-  const typeLabel = isMock ? ' Mock' : '🌐 API';
+  const code = extractResponseCode(s.response);
 
-  let html = `<div class="resp-panel ${typeCls}">`;
+  if (!s.mock) {
+    // Real API — show only compact response code result, no URL, no raw body
+    if (code !== null) return buildRcResult(code);
+    const ok = s.device_status && s.device_status >= 200 && s.device_status < 300;
+    return `<div class="rc-row ${ok ? 'rc-ok' : 'rc-unknown'}">
+      ${ok ? '<span class="rc-tick">✓</span> Device responded successfully' : 'Device response received'}
+    </div>`;
+  }
 
-  // Header: badge + URL + optional HTTP status code
+  // Mock mode — show dev panel: URL + response code result + raw body
+  let html = `<div class="resp-panel mock">`;
+
   html += `<div class="resp-header">
-    <span class="resp-badge ${typeCls}">${typeLabel}</span>
+    <span class="resp-badge mock">🧪 Mock</span>
     <span class="resp-url">${esc(s.url)}</span>`;
-
   if (s.device_status) {
     const ok = s.device_status >= 200 && s.device_status < 300;
     html += `<span class="resp-status ${ok ? 'ok' : 'err'}">${s.device_status}</span>`;
   }
-
   html += `</div>`;
 
-  // Response body
+  if (code !== null) {
+    html += `<div class="resp-rc">${buildRcResult(code)}</div>`;
+  }
+
   const respText = formatResponse(s.response);
   if (respText !== null) {
     html += `<div class="resp-body" data-resp="${esc(respText)}">
       <div class="resp-toolbar">
-        <span class="resp-label">Response</span>
+        <span class="resp-label">Raw Response</span>
         <button class="copy-btn" onclick="copyResponse(this)">📋 Copy</button>
       </div>
       <pre class="resp-pre">${esc(respText)}</pre>
@@ -169,9 +203,9 @@ function copyResponse(btn) {
   if (!body) return;
   navigator.clipboard.writeText(body.dataset.resp).then(() => {
     const prev = btn.textContent;
-    btn.textContent = ' Copied';
+    btn.textContent = '✅ Copied';
     setTimeout(() => { btn.textContent = prev; }, 1800);
-  }).catch(() => { });
+  }).catch(() => {});
 }
 
 // ── Typing indicator ─────────────────────────────────────────────────────────
