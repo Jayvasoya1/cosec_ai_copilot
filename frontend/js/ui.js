@@ -83,7 +83,6 @@ function appendBotMsg(text, status, details) {
   row.className = 'msg-row bot';
 
   const isChatbotHelp = details && details.type === 'chatbot_help';
-  const icon  = STATUS_ICON[status]  || 'ℹ️';
   const extra = buildExtra(status, details);
 
   // When API results are present for a clean success, the RC pill is enough — skip the generic message.
@@ -94,15 +93,12 @@ function appendBotMsg(text, status, details) {
     ? text
     : hasApiResults
     ? ''
-    : `<span>${icon} ${esc(text)}</span>`;
+    : `<span>${esc(text)}</span>`;
 
   row.innerHTML = `
     <div class="av bot"><img class="av-img" src="./public/side_logo.png" alt="" /></div>
     <div class="msg-body">
-      <div class="bubble bot ${esc(status)}">
-        ${msgContent}
-        ${extra}
-      </div>
+      <div class="bubble bot ${esc(status)}">${msgContent}${extra}</div>
       <div class="ts">${time()} · ${STATUS_LABEL[status] || status}</div>
     </div>`;
   document.getElementById('chatInner').appendChild(row);
@@ -112,16 +108,8 @@ function appendBotMsg(text, status, details) {
 function buildExtra(_status, details) {
   if (!details) return '';
   let html = '';
-
   const successes = details.successes || [];
   successes.forEach(s => { html += buildResponsePanel(s); });
-
-  const missing = details.missing_fields || [];
-  if (missing.length > 0) {
-    const tags = missing.map(f => `<span class="field-tag">${esc(f)}</span>`).join('');
-    html += `<div class="missing-row"><span class="missing-label">Missing:</span>${tags}</div>`;
-  }
-
   return html;
 }
 
