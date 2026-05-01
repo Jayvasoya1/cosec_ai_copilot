@@ -86,9 +86,14 @@ function appendBotMsg(text, status, details) {
   const icon  = STATUS_ICON[status]  || 'ℹ️';
   const extra = buildExtra(status, details);
 
+  // When API results are present for a clean success, the RC pill is enough — skip the generic message.
+  const hasApiResults = status === 'success' && details && (details.successes || []).length > 0;
+
   // chatbot_help responses arrive as trusted HTML from our own backend — render directly.
   const msgContent = isChatbotHelp
     ? text
+    : hasApiResults
+    ? ''
     : `<span>${icon} ${esc(text)}</span>`;
 
   row.innerHTML = `
@@ -133,12 +138,11 @@ function extractResponseCode(resp) {
 function buildRcResult(code) {
   if (code === null) return '';
   if (isSuccessCode(code)) {
-    return `<div class="rc-row rc-ok"><span class="rc-tick">✓</span> Response-Code 0 — Successful</div>`;
+    return `<div class="rc-row rc-ok"><span class="rc-tick">✓</span> Successful</div>`;
   }
   const desc = getResponseDesc(code);
   return `<div class="rc-err-box">
     <div class="rc-err-header">
-      <span class="rc-code">Code ${code}</span>
       <span class="rc-desc">${esc(desc)}</span>
     </div>
   </div>`;
