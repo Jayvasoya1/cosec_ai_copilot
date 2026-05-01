@@ -7,12 +7,10 @@ const STATUS_ICON  = { success: '✅', error: '❌', need_input: '🔔', partial
 const STATUS_LABEL = { success: 'Success', error: 'Error', need_input: 'Input needed', partial_success: 'Partial success' };
 
 const CHIPS_HTML = `
+  <div class="chip" onclick="sendSuggestion('What can I do?')">❓ What can I do?</div>
   <div class="chip" onclick="sendSuggestion('Add user Jay with id 101')">➕ Add user</div>
-  <div class="chip" onclick="sendSuggestion('Delete user with id 5')">🗑 Delete user</div>
-  <div class="chip" onclick="sendSuggestion('Get enroll options')">📋 Get enroll options</div>
-  <div class="chip" onclick="sendSuggestion('Set enroll finger count to 3')">✏️ Set enroll options</div>
+  <div class="chip" onclick="sendSuggestion('Enroll user 5 on door 1')">👤 Enroll user</div>
   <div class="chip" onclick="sendSuggestion('Get access setting')">🔑 Get access setting</div>
-  <div class="chip" onclick="sendSuggestion('Set access setting work start at 9 00')">⏰ Set access time</div>
   <div class="chip" onclick="sendSuggestion('Get panel details')">📊 Panel details</div>
 `;
 
@@ -57,7 +55,7 @@ function showWelcome() {
     <div class="welcome-title">CoSec AI Copilot</div>
     <div class="welcome-desc">
       Control your COSEC access devices using natural language.
-      Type a command below or pick a suggestion.
+      Type a command below or use the sidebar for quick access.
     </div>
     <div class="chips">${CHIPS_HTML}</div>`;
   inner.appendChild(w);
@@ -214,9 +212,17 @@ function clearChat() {
   setPending(false);
 }
 
-// ── API status badge ──────────────────────────────────────────────────────────
+// ── Theme toggle ──────────────────────────────────────────────────────────────
 
-function setApiStatus(online) {
-  document.getElementById('apiDot').className  = online ? 'dot pulse' : 'dot offline';
-  document.getElementById('apiText').textContent = online ? 'API Online' : 'API Offline';
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+}
+
+// ── API status badge (no-op — badge removed from UI) ─────────────────────────
+
+function setApiStatus(_online) {
+  // API status badge was removed from the header; this is intentionally a no-op.
 }
