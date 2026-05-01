@@ -24,7 +24,7 @@ class EnrollOptionsSchema(BaseSchema):
     FIELD_CONSTRAINTS = {
         "pdid": {"type": "int"},
         "user-id": {"type": "int"},
-        "type":{"type":"int"}
+        "type":{"type":"string"}
 
     }
     
