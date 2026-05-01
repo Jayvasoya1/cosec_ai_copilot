@@ -100,16 +100,12 @@ def build_url(group: str, params: Dict) -> str:
                 
         if group == "enrolluser" and params.get("action") == "enroll":
             logger.info(f"Building URL for enrolluser enroll with params: {params_to_encode}")
-
-
-            params_to_encode["face-count"] = "1"
-
-
             if not params_to_encode["type"]:
                 params_to_encode["type"] = "7"
                 logger.info("Defaulting to 7")
 
         if group == "enrolluser" and params.get("action") == "enroll" and params_to_encode.get("type") == "7":
+            params_to_encode["face-count"] = "1"
             resp = call_device_api( f"/192.168.103.184/device.cgi/users?action=set&user-id={params_to_encode['user-id']}&enable-fr=1")
             resp = call_device_api(f"/192.168.103.184/device.cgi/fr-settings?action=set&pdid={params_to_encode['pdid']}&enable=1")
         
