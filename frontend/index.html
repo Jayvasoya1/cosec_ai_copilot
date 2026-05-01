@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CoSec AI Copilot</title>
+  <title> COSEC Copilot</title>
   <link rel="icon" href="./public/Matrix-ComSec_Logo (1).png" type="image/png">
   <link rel="stylesheet" href="css/app.css?v=7" />
 </head>
@@ -14,8 +14,8 @@
   <div class="header-left">
     <img class="logo-img" src="./public/Matrix-ComSec_Logo (1).png" alt="Matrix ComSec" />
     <div>
-      <div class="header-title">AI Copilot</div>
-      <div class="header-sub">Access Control Assistant</div>
+      <div class="header-title">COSEC Copilot</div>
+      <div class="header-sub">Panel Assistant</div>
     </div>
   </div>
   <div class="header-right">
@@ -47,7 +47,8 @@
       <button class="sb-btn" onclick="sendSuggestion('What is delete user?')">📖 Delete User</button>
       <button class="sb-btn" onclick="sendSuggestion('What is get user?')">📖 Get User</button>
       <button class="sb-btn" onclick="sendSuggestion('What is enroll user?')">📖 Enroll User</button>
-      <button class="sb-btn" onclick="sendSuggestion('What is door configuration?')">📖 Door Config</button>
+      <button class="sb-btn" onclick="sendSuggestion('What is get door configuration?')">📖 Get Door Config</button>
+      <button class="sb-btn" onclick="sendSuggestion('What is set door configuration?')">📖 Set Door Config</button>
     </div>
 
  
@@ -59,8 +60,8 @@
       <button class="sb-btn" onclick="sendSuggestion('Add user Jay with id 101')">➕ Add User</button>
       <button class="sb-btn" onclick="sendSuggestion('Delete user with id 5')">🗑️ Delete User</button>
       <button class="sb-btn" onclick="sendSuggestion('Enroll user 5 on door 1')">👤 Enroll User</button>
-      <button class="sb-btn" onclick="sendSuggestion('Get door configuration with pid 1')">👤 Get Door con User</button>
-      <button class="sb-btn" onclick="sendSuggestion('Set door configuration door name argo and door-type argo face/vega , ip adress 192.168.103.184 and mac address 00:1b:09:16:23:24')">👤 Set Door Config</button>
+      <button class="sb-btn" onclick="sendSuggestion('Get door configuration with pid 1')">🚪 Get Door Config</button>
+      <button class="sb-btn" onclick="sendSuggestion('Set door configuration door name argo and door-type argo face/vega , ip adress 192.168.103.184 and mac address 00:1b:09:16:23:24')">⚙️ Set Door Config</button>
       
     </div>
 
@@ -75,19 +76,8 @@
 
         <!-- Welcome screen (removed by ui.js on first message) -->
         <div class="welcome" id="welcome">
-          <div class="welcome-icon">🔒</div>
-          <div class="welcome-title">CoSec AI Copilot</div>
-          <div class="welcome-desc">
-            Control your COSEC access devices using natural language.
-            Type a command below or use the sidebar for quick access.
-          </div>
-          <div class="chips">
-            <div class="chip" onclick="sendSuggestion('What can I do?')">❓ What can I do?</div>
-            <div class="chip" onclick="sendSuggestion('Add user Jay with id 101')">➕ Add user</div>
-            <div class="chip" onclick="sendSuggestion('Enroll user 5 on door 1')">👤 Enroll user</div>
-            <div class="chip" onclick="sendSuggestion('Get access setting')">🔑 Get access setting</div>
-            <div class="chip" onclick="sendSuggestion('Get panel details')">📊 Panel details</div>
-          </div>
+          <img class="logo-img" src="./public/Matrix-ComSec_Logo (1).png" alt="Matrix ComSec" />
+          <div class="welcome-title">COSEC Copilot</div>
         </div>
 
       </div>
@@ -104,7 +94,7 @@
             <textarea
               id="inputBox"
               rows="1"
-              placeholder="Type a command…  e.g. 'Add user Jay with id 101'"
+              placeholder="Type a command…"
               onkeydown="handleKey(event)"
               oninput="resize(this)"
             ></textarea>

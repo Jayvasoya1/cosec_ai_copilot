@@ -128,7 +128,7 @@ sequenceDiagram
     S-->>G: Valid!
     
     G->>G: Execute API
-    G-->>U: "✅ Success: API Hit"
+    G-->>U: " Success: API Hit"
 ```
 
 ---
@@ -166,7 +166,7 @@ The frontend loops through all executed tasks in a single turn and builds intera
 ```javascript
 const successes = details.successes || [];
 for (const s of successes) {
-  const lbl = s.mock ? '🧪 MOCK' : '🌐 API';
+  const lbl = s.mock ? ' MOCK' : '🌐 API';
   html += `<div class="api-row"><div class="api-pill">${lbl}: ${s.url}</div></div>`;
   
   if (s.response) {

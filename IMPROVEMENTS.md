@@ -414,7 +414,7 @@ User Input
 
 ---
 
-## 🧪 Testing the Improvements
+##  Testing the Improvements
 
 ### Basic Test
 ```bash
@@ -427,7 +427,7 @@ curl -X POST http://localhost:8000/chat \
 ```json
 {
     "status": "success",
-    "message": "✅ Mock executed: {...}",
+    "message": " Mock executed: {...}",
     "details": {
         "status": "success",
         "total_tasks": 1,
@@ -467,12 +467,12 @@ USE_MOCK=True    # Use mock instead of real device
 
 ---
 
-## ✅ What's Preserved
+##  What's Preserved
 
-✅ **Same Workflow** - Intent → Plan → Route → Execute → Response  
-✅ **Same Architecture** - All layers maintained  
-✅ **Same Demo Focus** - Still simple and focused  
-✅ **Backward Compatible** - Existing tests should work  
+ **Same Workflow** - Intent → Plan → Route → Execute → Response  
+ **Same Architecture** - All layers maintained  
+ **Same Demo Focus** - Still simple and focused  
+ **Backward Compatible** - Existing tests should work  
 
 ---
 

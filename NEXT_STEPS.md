@@ -373,7 +373,7 @@ curl -X POST http://localhost:8000/chat \
 # Expected response:
 {
     "status": "success",
-    "message": "✅ Mock executed: {...}",
+    "message": " Mock executed: {...}",
     "details": {...}
 }
 ```
@@ -406,7 +406,7 @@ For each new group you add:
 
 ---
 
-## ✅ Best Practices
+##  Best Practices
 
 1. **Always validate** - Use schema validation before API calls
 2. **Log everything** - Use logging for debugging

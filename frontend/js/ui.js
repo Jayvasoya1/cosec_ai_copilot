@@ -3,7 +3,7 @@
  * No business logic here — only "how things look"
  */
 
-const STATUS_ICON  = { success: '✅', error: '❌', need_input: '🔔', partial_success: '⚠️' };
+const STATUS_ICON = { success: '', error: '', need_input: '🔔', partial_success: '⚠️' };
 const STATUS_LABEL = { success: 'Success', error: 'Error', need_input: 'Input needed', partial_success: 'Partial success' };
 
 const CHIPS_HTML = `
@@ -51,8 +51,8 @@ function showWelcome() {
   w.className = 'welcome';
   w.id = 'welcome';
   w.innerHTML = `
-    <div class="welcome-icon">🔒</div>
-    <div class="welcome-title">CoSec AI Copilot</div>
+    <img class="welcome-side-logo" src="./public/side_logo.png" alt="CoSec" />
+    <div class="welcome-title">COSEC Copilot</div>
     <div class="welcome-desc">
       Control your COSEC access devices using natural language.
       Type a command below or use the sidebar for quick access.
@@ -83,7 +83,7 @@ function appendBotMsg(text, status, details) {
   row.className = 'msg-row bot';
 
   const isChatbotHelp = details && details.type === 'chatbot_help';
-  const icon  = STATUS_ICON[status]  || 'ℹ️';
+  const icon = STATUS_ICON[status] || '';
   const extra = buildExtra(status, details);
 
   // chatbot_help responses arrive as trusted HTML from our own backend — render directly.
@@ -92,7 +92,7 @@ function appendBotMsg(text, status, details) {
     : `<span>${icon} ${esc(text)}</span>`;
 
   row.innerHTML = `
-    <div class="av bot">🔒</div>
+    <div class="av bot"><img class="av-img" src="./public/side_logo.png" alt="" /></div>
     <div class="msg-body">
       <div class="bubble bot ${esc(status)}">
         ${msgContent}
@@ -123,9 +123,9 @@ function buildExtra(_status, details) {
 function buildResponsePanel(s) {
   if (!s.url) return '';
 
-  const isMock    = s.mock;
-  const typeCls   = isMock ? 'mock' : 'real';
-  const typeLabel = isMock ? '🧪 Mock' : '🌐 API';
+  const isMock = s.mock;
+  const typeCls = isMock ? 'mock' : 'real';
+  const typeLabel = isMock ? ' Mock' : '🌐 API';
 
   let html = `<div class="resp-panel ${typeCls}">`;
 
@@ -169,9 +169,9 @@ function copyResponse(btn) {
   if (!body) return;
   navigator.clipboard.writeText(body.dataset.resp).then(() => {
     const prev = btn.textContent;
-    btn.textContent = '✅ Copied';
+    btn.textContent = ' Copied';
     setTimeout(() => { btn.textContent = prev; }, 1800);
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 // ── Typing indicator ─────────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ function showTyping() {
   row.className = 'typing-row';
   row.id = 'typing';
   row.innerHTML = `
-    <div class="av bot">🔒</div>
+    <div class="av bot"><img class="av-img" src="./public/side_logo.png" alt="" /></div>
     <div class="typing-bubble">
       <div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>
     </div>`;

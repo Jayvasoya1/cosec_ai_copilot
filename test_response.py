@@ -12,7 +12,7 @@ state = {
         'status': 'success',
         'url': '/device.cgi/users?action=set&user-id=101&name=John',
         'mock': False,
-        'message': '✅ Command executed successfully',
+        'message': ' Command executed successfully',
         'response': '<response><status>OK</status><message>User added successfully</message></response>',
         'device_status': 200,
     }

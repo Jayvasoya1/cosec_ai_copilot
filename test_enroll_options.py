@@ -57,7 +57,7 @@ test_values = [
 
 for field, value, expected in test_values:
     result = schema.validate_field_values(field, value)
-    status = "✅" if result == expected else "❌"
+    status = "" if result == expected else ""
     print(f"  {status} validate({field}={value}) = {result} (expected {expected})")
 
 print()

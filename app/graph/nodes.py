@@ -479,7 +479,7 @@ def execute_node(state: CopilotState) -> dict:
                 "mock":    True,
                 "group":   group,
                 "action":  action,
-                "message": f"✅ Mock executed: {params}",
+                "message": f" Mock executed: {params}",
                 "response": {"status": "success", "mock_data": params},
             }
         else:
@@ -490,7 +490,7 @@ def execute_node(state: CopilotState) -> dict:
                 "mock":          False,
                 "group":         group,
                 "action":        action,
-                "message":       "✅ Command executed successfully",
+                "message":       " Command executed successfully",
                 "response":      resp.get("data"),
                 "device_status": resp.get("status_code"),
             }
@@ -573,7 +573,7 @@ def respond_node(state: CopilotState) -> dict:
         question = generate_question(missing)
         
         if completed:
-            prefix = f"✅ Executed {len(completed)} task{'s' if len(completed) > 1 else ''}. "
+            prefix = f" Executed {len(completed)} task{'s' if len(completed) > 1 else ''}. "
             question = prefix + question
             
         return {
@@ -605,11 +605,11 @@ def respond_node(state: CopilotState) -> dict:
 
     # ── 4. Success ───────────────────────────────────────────────────────────
     if completed:
-        messages = [r.get("message", "✅ Command executed successfully") for r in completed]
+        messages = [r.get("message", " Command executed successfully") for r in completed]
         
         # Combine messages
         if len(completed) > 1:
-            combined_message = f"✅ Successfully executed {len(completed)} tasks:\n" + "\n".join(f"- {m.replace('✅ ', '')}" for m in messages)
+            combined_message = f" Successfully executed {len(completed)} tasks:\n" + "\n".join(f"- {m.replace(' ', '')}" for m in messages)
         else:
             combined_message = messages[0]
 

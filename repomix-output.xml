@@ -140,7 +140,7 @@ def execute_task(route_data: dict) -> dict:
             return {
                 "status": "success",
                 "url": url,
-                "message": f"✅ Mock executed: {params}",
+                "message": f" Mock executed: {params}",
                 "mock": True
             }
         
@@ -153,7 +153,7 @@ def execute_task(route_data: dict) -> dict:
         return {
             "status": "success",
             "url": url,
-            "message": "✅ Command executed successfully",
+            "message": " Command executed successfully",
             "response": response.get("data"),
             "device_status": response.get("status_code")
         }
@@ -578,7 +578,7 @@ def build_response(results: list) -> dict:
         if result.get("status") == "error":
             error_msg = result.get("error", "Unknown error")
             error_code = result.get("code", "ERROR")
-            messages.append(f"❌ Task {i+1}: {error_msg}")
+            messages.append(f" Task {i+1}: {error_msg}")
             errors.append({
                 "task": i,
                 "error": error_msg,
@@ -2098,7 +2098,7 @@ user_schema = UserSchema()
         │             RESPONSE TO USER                            │
         │  {                                                      │
         │    "status": "success",                                 │
-        │    "message": "✅ User added successfully",             │
+        │    "message": " User added successfully",             │
         │    "details": {...}                                     │
         │  }                                                      │
         └─────────────────────────────────────────────────────────┘
@@ -2300,15 +2300,15 @@ User Input
                │
                ├─► Task 1: Router → Handler → API
                │   │
-               │   └─ Result 1 ✅
+               │   └─ Result 1 
                │
                ├─► Task 2: Router → Handler → API
                │   │
-               │   └─ Result 2 ✅
+               │   └─ Result 2 
                │
                ├─► Task 3: Router → Handler → API
                │   │
-               │   └─ Result 3 ✅ (or error)
+               │   └─ Result 3  (or error)
                │       │
                │       ▼ (stop if need_input)
                │
@@ -2316,7 +2316,7 @@ User Input
                    │
                    ├─ Successful: 3
                    ├─ Failed: 0
-                   └─ Messages: ["✅ Task 1...", ...]
+                   └─ Messages: [" Task 1...", ...]
 ```
 
 ---
@@ -2375,32 +2375,32 @@ Your codebase has been **production-upgraded** with comprehensive error handling
 ### New Files Created (6 files)
 
 ```
-✅ app/exceptions.py          - 8 custom exception classes
-✅ app/logger.py              - Structured logging system
-✅ app/schemas/base_schema.py - Base schema template class
-✅ app/schemas/registry.py    - Schema registry for management
-✅ .env.example               - Configuration template
-✅ IMPROVEMENTS.md            - Detailed changes guide
-✅ NEXT_STEPS.md              - Expansion guide
-✅ ARCHITECTURE.md            - Visual diagrams
+ app/exceptions.py          - 8 custom exception classes
+ app/logger.py              - Structured logging system
+ app/schemas/base_schema.py - Base schema template class
+ app/schemas/registry.py    - Schema registry for management
+ .env.example               - Configuration template
+ IMPROVEMENTS.md            - Detailed changes guide
+ NEXT_STEPS.md              - Expansion guide
+ ARCHITECTURE.md            - Visual diagrams
 ```
 
 ### Enhanced Files (12 files)
 
 ```
-✅ app/config.py              - Better config management
-✅ app/llm/openai_client.py   - Error handling & validation
-✅ app/core/intent_parser.py  - Full validation & error handling
-✅ app/core/planner.py        - Ready for enhancements
-✅ app/core/router.py         - Dynamic handler registry
-✅ app/core/executor.py       - Proper error tracking
-✅ app/core/param_resolver.py - Extensible for multiple groups
-✅ app/core/response_builder.py - Enhanced responses
-✅ app/services/api_builder.py  - Schema validation
-✅ app/services/device_api.py   - HTTP error handling
-✅ handlers/user_handler.py     - Better parameter mapping
-✅ schemas/user_schema.py       - BaseSchema inheritance
-✅ app/main.py                  - Production-ready app
+ app/config.py              - Better config management
+ app/llm/openai_client.py   - Error handling & validation
+ app/core/intent_parser.py  - Full validation & error handling
+ app/core/planner.py        - Ready for enhancements
+ app/core/router.py         - Dynamic handler registry
+ app/core/executor.py       - Proper error tracking
+ app/core/param_resolver.py - Extensible for multiple groups
+ app/core/response_builder.py - Enhanced responses
+ app/services/api_builder.py  - Schema validation
+ app/services/device_api.py   - HTTP error handling
+ handlers/user_handler.py     - Better parameter mapping
+ schemas/user_schema.py       - BaseSchema inheritance
+ app/main.py                  - Production-ready app
 ```
 
 ---
@@ -2449,10 +2449,10 @@ Your codebase has been **production-upgraded** with comprehensive error handling
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Created** | 8 | ✅ Complete |
-| **Enhanced** | 12 | ✅ Complete |
-| **Preserved** | All | ✅ Backward Compatible |
-| **Tests** | Ready | ✅ For manual testing |
+| **Created** | 8 |  Complete |
+| **Enhanced** | 12 |  Complete |
+| **Preserved** | All |  Backward Compatible |
+| **Tests** | Ready |  For manual testing |
 
 ---
 
@@ -2486,13 +2486,13 @@ Intent → Parser (validated) → Router (registry-based) → Handler (pattern)
 
 ## 🚀 Ready for
 
-### ✅ Current Use
+###  Current Use
 - Test locally with mock mode
 - Understand new features
 - Review improvements
 - Plan next groups
 
-### ✅ Adding New Groups
+###  Adding New Groups
 - Users (done)
 - Devices (pattern ready)
 - Access Groups (pattern ready)
@@ -2500,7 +2500,7 @@ Intent → Parser (validated) → Router (registry-based) → Handler (pattern)
 - Events (pattern ready)
 - 50+ more groups...
 
-### ✅ Production Deployment
+###  Production Deployment
 - Error handling complete
 - Logging comprehensive
 - Configuration centralized
@@ -2611,23 +2611,23 @@ handler = handler_registry.get_handler("add_device")
 
 | Metric | Before | After | Status |
 |--------|--------|-------|--------|
-| **Error Handling** | Basic try/catch | Custom exceptions | ✅ +700% |
-| **Logging Coverage** | 0% | ~80% | ✅ +∞ |
-| **Code Structure** | Procedural | OOP + Registry | ✅ Better |
-| **Extensibility** | Limited | Pattern-based | ✅ +50 groups |
-| **Production Ready** | No | Yes | ✅ Ready |
+| **Error Handling** | Basic try/catch | Custom exceptions |  +700% |
+| **Logging Coverage** | 0% | ~80% |  +∞ |
+| **Code Structure** | Procedural | OOP + Registry |  Better |
+| **Extensibility** | Limited | Pattern-based |  +50 groups |
+| **Production Ready** | No | Yes |  Ready |
 
 ---
 
 ## 🔒 Backward Compatibility
 
-✅ **All old code still works**
+ **All old code still works**
 - Existing routes functional
 - User handler intact
 - Schema still loads
 - Tests should pass
 
-✅ **Gradual migration possible**
+ **Gradual migration possible**
 - Use new features incrementally
 - No need to refactor all at once
 - Old patterns still supported
@@ -2649,7 +2649,7 @@ handler = handler_registry.get_handler("add_device")
 
 | Phase | Status | Details |
 |-------|--------|---------|
-| **Phase 1** | ✅ Complete | Users group implemented |
+| **Phase 1** |  Complete | Users group implemented |
 | **Phase 2** | 🚀 Ready | Pattern in place for 50+ groups |
 | **Phase 3** | 📋 Planned | Full COSEC device support |
 | **Production** | 🎯 Ready | Error handling & logging complete |
@@ -2671,13 +2671,13 @@ handler = handler_registry.get_handler("add_device")
 
 ## 🎉 Final Status
 
-✅ **Error handling** - Comprehensive  
-✅ **Logging** - Full coverage  
-✅ **Validation** - Schema-based  
-✅ **Routing** - Dynamic & extensible  
-✅ **Configuration** - Environment-based  
-✅ **Documentation** - Complete  
-✅ **Scalability** - Pattern ready  
+ **Error handling** - Comprehensive  
+ **Logging** - Full coverage  
+ **Validation** - Schema-based  
+ **Routing** - Dynamic & extensible  
+ **Configuration** - Environment-based  
+ **Documentation** - Complete  
+ **Scalability** - Pattern ready  
 
 **Your project is now production-grade and ready for rapid expansion!**
 
@@ -3103,7 +3103,7 @@ User Input
 
 ---
 
-## 🧪 Testing the Improvements
+##  Testing the Improvements
 
 ### Basic Test
 ```bash
@@ -3116,7 +3116,7 @@ curl -X POST http://localhost:8000/chat \
 ```json
 {
     "status": "success",
-    "message": "✅ Mock executed: {...}",
+    "message": " Mock executed: {...}",
     "details": {
         "status": "success",
         "total_tasks": 1,
@@ -3156,12 +3156,12 @@ USE_MOCK=True    # Use mock instead of real device
 
 ---
 
-## ✅ What's Preserved
+##  What's Preserved
 
-✅ **Same Workflow** - Intent → Plan → Route → Execute → Response  
-✅ **Same Architecture** - All layers maintained  
-✅ **Same Demo Focus** - Still simple and focused  
-✅ **Backward Compatible** - Existing tests should work  
+ **Same Workflow** - Intent → Plan → Route → Execute → Response  
+ **Same Architecture** - All layers maintained  
+ **Same Demo Focus** - Still simple and focused  
+ **Backward Compatible** - Existing tests should work  
 
 ---
 
@@ -3572,7 +3572,7 @@ curl -X POST http://localhost:8000/chat \
 # Expected response:
 {
     "status": "success",
-    "message": "✅ Mock executed: {...}",
+    "message": " Mock executed: {...}",
     "details": {...}
 }
 ```
@@ -3605,7 +3605,7 @@ For each new group you add:
 
 ---
 
-## ✅ Best Practices
+##  Best Practices
 
 1. **Always validate** - Use schema validation before API calls
 2. **Log everything** - Use logging for debugging
@@ -3649,7 +3649,7 @@ To perform even simple tasks (like adding a user or assigning access), users mus
 * Use exact parameter names
 * Execute multiple steps in correct order
 
-### ❌ Challenges Faced
+###  Challenges Faced
 
 * Steep learning curve for non-technical users
 * Time-consuming operations
@@ -3676,7 +3676,7 @@ This involves:
 
 We built an **AI-powered Copilot system** that allows users to control COSEC devices using **simple natural language**.
 
-### ✅ Core Idea
+###  Core Idea
 
 Instead of:
 
@@ -3783,7 +3783,7 @@ This data is:
 
 ## 4. Key Technical Challenge
 
-### ❌ Wrong Approach
+###  Wrong Approach
 
 * Sending full API documentation to AI
 * Letting AI generate full API calls
@@ -3797,7 +3797,7 @@ Problems:
 
 ---
 
-### ✅ Our Approach (Correct)
+###  Our Approach (Correct)
 
 We **separate responsibilities**:
 
@@ -3933,20 +3933,20 @@ Checks:
 ### Step 10: Response
 
 ```
-✅ User Ravi added successfully
+ User Ravi added successfully
 ```
 
 ---
 
 ## 7. Key Features Implemented
 
-### ✅ Natural Language Commands
+###  Natural Language Commands
 
 * No need to remember API syntax
 
 ---
 
-### ✅ Multi-Step Execution
+###  Multi-Step Execution
 
 ```
 Add Ravi and delete user 55
@@ -3954,7 +3954,7 @@ Add Ravi and delete user 55
 
 ---
 
-### ✅ Smart Questioning
+###  Smart Questioning
 
 ```
 User: Add Ravi
@@ -3963,7 +3963,7 @@ System: Please provide user ID
 
 ---
 
-### ✅ Context Memory
+###  Context Memory
 
 ```
 User: Add Ravi
@@ -3974,7 +3974,7 @@ User: 101
 
 ---
 
-### ✅ Modular Design
+###  Modular Design
 
 * Easy to add new groups:
 
@@ -4047,7 +4047,7 @@ User: 101
 
 ## 10. Current Scope (What We Built)
 
-### ✅ Implemented
+###  Implemented
 
 * User Management:
 
@@ -4087,9 +4087,9 @@ User: 101
 
 This system transforms:
 
-❌ Complex technical operations
+ Complex technical operations
 ➡️ into
-✅ Simple human interactions
+ Simple human interactions
 
 ---
 
@@ -4123,10 +4123,10 @@ User: Add Ravi
 System: Please provide user ID
 
 User: 101
-System: ✅ User Ravi added
+System:  User Ravi added
 
 User: Delete him
-System: ✅ User deleted
+System:  User deleted
 ```
 
 ---
@@ -4173,7 +4173,7 @@ Your codebase has been significantly improved! Here's what was added:
 | Schema Registry | `app/schemas/registry.py` | Dynamic schema management |
 | Config Template | `.env.example` | Configuration reference |
 
-### ✅ Enhanced Files
+###  Enhanced Files
 
 All core files improved with:
 - Comprehensive error handling

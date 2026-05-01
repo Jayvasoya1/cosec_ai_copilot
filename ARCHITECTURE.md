@@ -85,7 +85,7 @@
         │             RESPONSE TO USER                            │
         │  {                                                      │
         │    "status": "success",                                 │
-        │    "message": "✅ User added successfully",             │
+        │    "message": " User added successfully",             │
         │    "details": {...}                                     │
         │  }                                                      │
         └─────────────────────────────────────────────────────────┘
@@ -287,15 +287,15 @@ User Input
                │
                ├─► Task 1: Router → Handler → API
                │   │
-               │   └─ Result 1 ✅
+               │   └─ Result 1 
                │
                ├─► Task 2: Router → Handler → API
                │   │
-               │   └─ Result 2 ✅
+               │   └─ Result 2 
                │
                ├─► Task 3: Router → Handler → API
                │   │
-               │   └─ Result 3 ✅ (or error)
+               │   └─ Result 3  (or error)
                │       │
                │       ▼ (stop if need_input)
                │
@@ -303,7 +303,7 @@ User Input
                    │
                    ├─ Successful: 3
                    ├─ Failed: 0
-                   └─ Messages: ["✅ Task 1...", ...]
+                   └─ Messages: [" Task 1...", ...]
 ```
 
 ---

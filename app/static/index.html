@@ -1,27 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CoSec AI Copilot</title>
+  <title>COSEC Copilot</title>
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     :root {
-      --bg:       #0f172a;
-      --surface:  #1e293b;
-      --border:   #334155;
-      --muted:    #475569;
-      --subtle:   #64748b;
-      --text:     #e2e8f0;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --border: #334155;
+      --muted: #475569;
+      --subtle: #64748b;
+      --text: #e2e8f0;
       --text-dim: #94a3b8;
-      --blue:     #3b82f6;
-      --blue-dark:#2563eb;
-      --green:    #22c55e;
-      --red:      #ef4444;
-      --amber:    #f59e0b;
-      --orange:   #f97316;
-      --purple:   #8b5cf6;
+      --blue: #3b82f6;
+      --blue-dark: #2563eb;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --orange: #f97316;
+      --purple: #8b5cf6;
     }
 
     body {
@@ -47,24 +54,47 @@
       z-index: 10;
     }
 
-    .header-left { display: flex; align-items: center; gap: 12px; }
-
-    .logo {
-      width: 38px; height: 38px;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 2px 8px rgba(59,130,246,.35);
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .header-title   { font-size: 16px; font-weight: 700; color: #f1f5f9; letter-spacing: .3px; }
-    .header-sub     { font-size: 11px; color: var(--subtle); margin-top: 1px; }
+    .logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, .35);
+    }
 
-    .header-right   { display: flex; align-items: center; gap: 8px; }
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: .3px;
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: var(--subtle);
+      margin-top: 1px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     .badge {
-      display: flex; align-items: center; gap: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 20px;
@@ -76,28 +106,58 @@
     }
 
     .dot {
-      width: 7px; height: 7px; border-radius: 50%;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       background: var(--green);
       flex-shrink: 0;
     }
-    .dot.pulse { animation: pulse 2s ease-in-out infinite; }
-    .dot.offline { background: var(--red); animation: none; }
-    .dot.pending-dot { background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
 
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .dot.pulse {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .dot.offline {
+      background: var(--red);
+      animation: none;
+    }
+
+    .dot.pending-dot {
+      background: var(--amber);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
 
     .icon-btn {
       background: var(--border);
       border: none;
       color: var(--text-dim);
-      width: 32px; height: 32px;
+      width: 32px;
+      height: 32px;
       border-radius: 8px;
       cursor: pointer;
       font-size: 14px;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: background .15s, color .15s;
     }
-    .icon-btn:hover { background: var(--muted); color: var(--text); }
+
+    .icon-btn:hover {
+      background: var(--muted);
+      color: var(--text);
+    }
 
     /* ── CHAT AREA ── */
     .chat-wrap {
@@ -108,9 +168,18 @@
       flex-direction: column;
     }
 
-    .chat-wrap::-webkit-scrollbar { width: 4px; }
-    .chat-wrap::-webkit-scrollbar-track { background: transparent; }
-    .chat-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .chat-wrap::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .chat-wrap::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .chat-wrap::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
 
     .chat-inner {
       width: 100%;
@@ -134,11 +203,32 @@
       gap: 12px;
     }
 
-    .welcome-icon { font-size: 52px; line-height: 1; margin-bottom: 4px; }
-    .welcome-title { font-size: 22px; font-weight: 700; color: #f1f5f9; }
-    .welcome-desc  { font-size: 13px; color: var(--subtle); max-width: 380px; line-height: 1.6; }
+    .welcome-icon {
+      font-size: 52px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
 
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+    .welcome-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .welcome-desc {
+      font-size: 13px;
+      color: var(--subtle);
+      max-width: 380px;
+      line-height: 1.6;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
 
     .chip {
       background: var(--surface);
@@ -151,7 +241,12 @@
       transition: all .2s;
       user-select: none;
     }
-    .chip:hover { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,.08); }
+
+    .chip:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: rgba(59, 130, 246, .08);
+    }
 
     /* ── MESSAGES ── */
     .msg-row {
@@ -159,21 +254,60 @@
       gap: 10px;
       animation: fadeUp .2s ease;
     }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
-    .msg-row.user { flex-direction: row-reverse; align-self: flex-end; max-width: 75%; }
-    .msg-row.bot  { align-self: flex-start; max-width: 85%; }
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .msg-row.user {
+      flex-direction: row-reverse;
+      align-self: flex-end;
+      max-width: 75%;
+    }
+
+    .msg-row.bot {
+      align-self: flex-start;
+      max-width: 85%;
+    }
 
     .av {
-      width: 32px; height: 32px; border-radius: 9px;
-      flex-shrink: 0; display: flex; align-items: center;
-      justify-content: center; font-size: 15px; font-weight: 700;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
       align-self: flex-end;
     }
-    .av.bot  { background: linear-gradient(135deg, var(--blue), var(--purple)); box-shadow: 0 2px 6px rgba(59,130,246,.3); }
-    .av.user { background: var(--border); color: var(--text-dim); font-size: 12px; }
 
-    .msg-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .av.bot {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      box-shadow: 0 2px 6px rgba(59, 130, 246, .3);
+    }
+
+    .av.user {
+      background: var(--border);
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+
+    .msg-body {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
 
     .bubble {
       padding: 10px 14px;
@@ -196,19 +330,44 @@
       border-bottom-left-radius: 4px;
     }
 
-    .bubble.bot.success      { border-left: 3px solid var(--green); }
-    .bubble.bot.error        { border-left: 3px solid var(--red); }
-    .bubble.bot.need_input   { border-left: 3px solid var(--amber); }
-    .bubble.bot.partial_success { border-left: 3px solid var(--orange); }
+    .bubble.bot.success {
+      border-left: 3px solid var(--green);
+    }
 
-    .ts { font-size: 10.5px; color: var(--muted); padding: 0 2px; }
-    .msg-row.user .ts { text-align: right; }
+    .bubble.bot.error {
+      border-left: 3px solid var(--red);
+    }
+
+    .bubble.bot.need_input {
+      border-left: 3px solid var(--amber);
+    }
+
+    .bubble.bot.partial_success {
+      border-left: 3px solid var(--orange);
+    }
+
+    .ts {
+      font-size: 10.5px;
+      color: var(--muted);
+      padding: 0 2px;
+    }
+
+    .msg-row.user .ts {
+      text-align: right;
+    }
 
     /* API pill */
-    .api-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+    .api-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 7px;
+    }
 
     .api-pill {
-      display: inline-flex; align-items: center; gap: 5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -218,40 +377,87 @@
       color: var(--subtle);
       word-break: break-all;
     }
-    .api-pill.mock { border-color: rgba(245,158,11,.4); color: var(--amber); }
-    .api-pill.real { border-color: rgba(34,197,94,.4);  color: var(--green); }
+
+    .api-pill.mock {
+      border-color: rgba(245, 158, 11, .4);
+      color: var(--amber);
+    }
+
+    .api-pill.real {
+      border-color: rgba(34, 197, 94, .4);
+      color: var(--green);
+    }
 
     /* Missing fields */
-    .missing-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; align-items: center; }
-    .missing-label { font-size: 11px; color: var(--subtle); }
+    .missing-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+      align-items: center;
+    }
+
+    .missing-label {
+      font-size: 11px;
+      color: var(--subtle);
+    }
+
     .field-tag {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 1px 7px;
-      font-family: 'SF Mono','Fira Code','Courier New',monospace;
+      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
       font-size: 11px;
       color: var(--amber);
     }
 
     /* Typing */
-    .typing-row { align-self: flex-start; display: flex; gap: 10px; }
+    .typing-row {
+      align-self: flex-start;
+      display: flex;
+      gap: 10px;
+    }
+
     .typing-bubble {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
       border-bottom-left-radius: 4px;
       padding: 12px 16px;
-      display: flex; gap: 5px; align-items: center;
+      display: flex;
+      gap: 5px;
+      align-items: center;
     }
+
     .tdot {
-      width: 6px; height: 6px; border-radius: 50%;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
       background: var(--subtle);
       animation: tdot 1.2s infinite;
     }
-    .tdot:nth-child(2) { animation-delay: .2s; }
-    .tdot:nth-child(3) { animation-delay: .4s; }
-    @keyframes tdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+    .tdot:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .tdot:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes tdot {
+
+      0%,
+      60%,
+      100% {
+        transform: translateY(0)
+      }
+
+      30% {
+        transform: translateY(-5px)
+      }
+    }
 
     /* Date separator */
     .date-sep {
@@ -261,7 +467,9 @@
       position: relative;
       margin: 4px 0;
     }
-    .date-sep::before, .date-sep::after {
+
+    .date-sep::before,
+    .date-sep::after {
       content: '';
       position: absolute;
       top: 50%;
@@ -269,23 +477,32 @@
       height: 1px;
       background: var(--border);
     }
-    .date-sep::before { left: 0; }
-    .date-sep::after  { right: 0; }
+
+    .date-sep::before {
+      left: 0;
+    }
+
+    .date-sep::after {
+      right: 0;
+    }
 
     /* ── PENDING BANNER ── */
     .pending-banner {
       display: none;
       align-items: center;
       gap: 8px;
-      background: rgba(245,158,11,.08);
-      border: 1px solid rgba(245,158,11,.25);
+      background: rgba(245, 158, 11, .08);
+      border: 1px solid rgba(245, 158, 11, .25);
       border-radius: 8px;
       padding: 7px 14px;
       font-size: 12px;
       color: var(--amber);
       margin-bottom: 8px;
     }
-    .pending-banner.visible { display: flex; }
+
+    .pending-banner.visible {
+      display: flex;
+    }
 
     /* ── INPUT AREA ── */
     .input-area {
@@ -306,7 +523,10 @@
       align-items: flex-end;
     }
 
-    .textarea-wrap { flex: 1; position: relative; }
+    .textarea-wrap {
+      flex: 1;
+      position: relative;
+    }
 
     textarea {
       width: 100%;
@@ -325,8 +545,14 @@
       transition: border-color .2s;
       display: block;
     }
-    textarea:focus { border-color: var(--blue); }
-    textarea::placeholder { color: var(--muted); }
+
+    textarea:focus {
+      border-color: var(--blue);
+    }
+
+    textarea::placeholder {
+      color: var(--muted);
+    }
 
     .send-btn {
       background: var(--blue);
@@ -340,15 +566,24 @@
       cursor: pointer;
       white-space: nowrap;
       transition: background .15s, transform .1s, box-shadow .15s;
-      display: flex; align-items: center; gap: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       flex-shrink: 0;
     }
+
     .send-btn:hover:not(:disabled) {
       background: var(--blue-dark);
-      box-shadow: 0 4px 14px rgba(59,130,246,.35);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, .35);
       transform: translateY(-1px);
     }
-    .send-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .send-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
 
     .hint-row {
       display: flex;
@@ -360,144 +595,140 @@
     }
   </style>
 </head>
+
 <body>
 
-<!-- ── HEADER ── -->
-<div class="header">
-  <div class="header-left">
-    <div class="logo">🔒</div>
-    <div>
-      <div class="header-title">CoSec AI Copilot</div>
-      <div class="header-sub">Access Control Assistant</div>
-    </div>
-  </div>
-  <div class="header-right">
-    <div class="badge" id="pendingBadge" style="display:none">
-      <div class="dot pending-dot"></div>
-      <span>Awaiting answer</span>
-    </div>
-    <div class="badge" id="apiBadge">
-      <div class="dot pulse" id="apiDot"></div>
-      <span id="apiText">Connecting…</span>
-    </div>
-    <button class="icon-btn" title="Clear chat" onclick="clearChat()">🗑</button>
-  </div>
-</div>
-
-<!-- ── CHAT ── -->
-<div class="chat-wrap" id="chatWrap">
-  <div class="chat-inner" id="chatInner">
-
-    <!-- Welcome -->
-    <div class="welcome" id="welcome">
-      <div class="welcome-icon">🔒</div>
-      <div class="welcome-title">CoSec AI Copilot</div>
-      <div class="welcome-desc">
-        Control your COSEC access devices using natural language.
-        Type a command below or pick a suggestion.
-      </div>
-      <div class="chips" id="chips">
-        <div class="chip" onclick="sendSuggestion('Add user Jay with id 101')">➕ Add user</div>
-        <div class="chip" onclick="sendSuggestion('Delete user with id 5')">🗑 Delete user</div>
-        <div class="chip" onclick="sendSuggestion('Get enroll options')">📋 Get enroll options</div>
-        <div class="chip" onclick="sendSuggestion('Set enroll finger count to 3')">✏️ Set enroll options</div>
-        <div class="chip" onclick="sendSuggestion('Get access setting')">🔑 Get access setting</div>
-        <div class="chip" onclick="sendSuggestion('Set access setting work start at 9 00')">⏰ Set access time</div>
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🔒</div>
+      <div>
+        <div class="header-title">CoSec AI Copilot</div>
+        <div class="header-sub">Access Control Assistant</div>
       </div>
     </div>
-
-  </div>
-</div>
-
-<!-- ── INPUT ── -->
-<div class="input-area">
-  <div class="input-inner">
-    <div class="pending-banner" id="pendingBanner">
-      ⏳ <strong>Follow-up:</strong> type your answer — or type a new command to start fresh
-    </div>
-    <div class="input-row">
-      <div class="textarea-wrap">
-        <textarea
-          id="inputBox"
-          rows="1"
-          placeholder="Type a command…  e.g. 'Add user Jay with id 101'"
-          onkeydown="handleKey(event)"
-          oninput="resize(this)"
-        ></textarea>
+    <div class="header-right">
+      <div class="badge" id="pendingBadge" style="display:none">
+        <div class="dot pending-dot"></div>
+        <span>Awaiting answer</span>
       </div>
-      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-        Send <span>↑</span>
-      </button>
-    </div>
-    <div class="hint-row">
-      <span>Enter to send &nbsp;·&nbsp; Shift+Enter for new line</span>
-      <span id="charCount" style="color:var(--muted)"></span>
+      <div class="badge" id="apiBadge">
+        <div class="dot pulse" id="apiDot"></div>
+        <span id="apiText">Connecting…</span>
+      </div>
+      <button class="icon-btn" title="Clear chat" onclick="clearChat()">🗑</button>
     </div>
   </div>
-</div>
 
-<script>
-  const API = 'http://127.0.0.1:8000';
-  let isPending = false;
+  <!-- ── CHAT ── -->
+  <div class="chat-wrap" id="chatWrap">
+    <div class="chat-inner" id="chatInner">
 
-  // ── Helpers ──────────────────────────────────────────────────
-  const $ = id => document.getElementById(id);
+      <!-- Welcome -->
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🔒</div>
+        <div class="welcome-title">CoSec AI Copilot</div>
+        <div class="welcome-desc">
+          Control your COSEC access devices using natural language.
+          Type a command below or pick a suggestion.
+        </div>
+        <div class="chips" id="chips">
+          <div class="chip" onclick="sendSuggestion('Add user Jay with id 101')">➕ Add user</div>
+          <div class="chip" onclick="sendSuggestion('Delete user with id 5')">🗑 Delete user</div>
+          <div class="chip" onclick="sendSuggestion('Get enroll options')">📋 Get enroll options</div>
+          <div class="chip" onclick="sendSuggestion('Set enroll finger count to 3')">✏️ Set enroll options</div>
+          <div class="chip" onclick="sendSuggestion('Get access setting')">🔑 Get access setting</div>
+          <div class="chip" onclick="sendSuggestion('Set access setting work start at 9 00')">⏰ Set access time</div>
+        </div>
+      </div>
 
-  function esc(t) {
-    return String(t)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
-  }
+    </div>
+  </div>
 
-  function time() {
-    return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-  }
+  <!-- ── INPUT ── -->
+  <div class="input-area">
+    <div class="input-inner">
+      <div class="pending-banner" id="pendingBanner">
+        ⏳ <strong>Follow-up:</strong> type your answer — or type a new command to start fresh
+      </div>
+      <div class="input-row">
+        <div class="textarea-wrap">
+          <textarea id="inputBox" rows="1" placeholder="Type a command…  e.g. 'Add user Jay with id 101'"
+            onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          Send <span>↑</span>
+        </button>
+      </div>
+      <div class="hint-row">
+        <span>Enter to send &nbsp;·&nbsp; Shift+Enter for new line</span>
+        <span id="charCount" style="color:var(--muted)"></span>
+      </div>
+    </div>
+  </div>
 
-  function scrollBottom() {
-    const w = $('chatWrap');
-    w.scrollTop = w.scrollHeight;
-  }
+  <script>
+    const API = 'http://127.0.0.1:8000';
+    let isPending = false;
 
-  function resize(el) {
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  }
+    // ── Helpers ──────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
 
-  // ── Status icons/colors ──────────────────────────────────────
-  const STATUS_ICON  = { success:'✅', error:'❌', need_input:'🔔', partial_success:'⚠️' };
-  const STATUS_LABEL = { success:'Success', error:'Error', need_input:'Input needed', partial_success:'Partial success' };
+    function esc(t) {
+      return String(t)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
-  // ── DOM builders ─────────────────────────────────────────────
-  function hideWelcome() {
-    const w = $('welcome');
-    if (w) w.remove();
-  }
+    function time() {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
-  function appendUserMsg(text) {
-    hideWelcome();
-    const row = document.createElement('div');
-    row.className = 'msg-row user';
-    row.innerHTML = `
+    function scrollBottom() {
+      const w = $('chatWrap');
+      w.scrollTop = w.scrollHeight;
+    }
+
+    function resize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    // ── Status icons/colors ──────────────────────────────────────
+    const STATUS_ICON = { success: '', error: '', need_input: '🔔', partial_success: '⚠️' };
+    const STATUS_LABEL = { success: 'Success', error: 'Error', need_input: 'Input needed', partial_success: 'Partial success' };
+
+    // ── DOM builders ─────────────────────────────────────────────
+    function hideWelcome() {
+      const w = $('welcome');
+      if (w) w.remove();
+    }
+
+    function appendUserMsg(text) {
+      hideWelcome();
+      const row = document.createElement('div');
+      row.className = 'msg-row user';
+      row.innerHTML = `
       <div class="av user">You</div>
       <div class="msg-body">
         <div class="bubble user">${esc(text)}</div>
         <div class="ts">${time()}</div>
       </div>`;
-    $('chatInner').appendChild(row);
-    scrollBottom();
-  }
+      $('chatInner').appendChild(row);
+      scrollBottom();
+    }
 
-  function appendBotMsg(text, status, details) {
-    hideWelcome();
-    const row = document.createElement('div');
-    row.className = 'msg-row bot';
+    function appendBotMsg(text, status, details) {
+      hideWelcome();
+      const row = document.createElement('div');
+      row.className = 'msg-row bot';
 
-    const icon  = STATUS_ICON[status]  || 'ℹ️';
-    const extra = buildExtra(status, details);
+      const icon = STATUS_ICON[status] || '';
+      const extra = buildExtra(status, details);
 
-    row.innerHTML = `
+      row.innerHTML = `
       <div class="av bot">🔒</div>
       <div class="msg-body">
         <div class="bubble bot ${esc(status)}">
@@ -506,132 +737,132 @@
         </div>
         <div class="ts">${time()} · ${STATUS_LABEL[status] || status}</div>
       </div>`;
-    $('chatInner').appendChild(row);
-    scrollBottom();
-  }
-
-  function buildExtra(status, details) {
-    if (!details) return '';
-    let html = '';
-
-    // API URL pill
-    const successes = details.successes || [];
-    if (successes.length > 0 && successes[0].url) {
-      const s    = successes[0];
-      const mock = s.mock;
-      const cls  = mock ? 'mock' : 'real';
-      const lbl  = mock ? '🧪 MOCK' : '🌐 API';
-      html += `<div class="api-row"><div class="api-pill ${cls}">${lbl}: ${esc(s.url)}</div></div>`;
+      $('chatInner').appendChild(row);
+      scrollBottom();
     }
 
-    // Missing fields
-    const missing = details.missing_fields || [];
-    if (missing.length > 0) {
-      const tags = missing.map(f => `<span class="field-tag">${esc(f)}</span>`).join('');
-      html += `<div class="missing-row"><span class="missing-label">Missing:</span>${tags}</div>`;
+    function buildExtra(status, details) {
+      if (!details) return '';
+      let html = '';
+
+      // API URL pill
+      const successes = details.successes || [];
+      if (successes.length > 0 && successes[0].url) {
+        const s = successes[0];
+        const mock = s.mock;
+        const cls = mock ? 'mock' : 'real';
+        const lbl = mock ? ' MOCK' : '🌐 API';
+        html += `<div class="api-row"><div class="api-pill ${cls}">${lbl}: ${esc(s.url)}</div></div>`;
+      }
+
+      // Missing fields
+      const missing = details.missing_fields || [];
+      if (missing.length > 0) {
+        const tags = missing.map(f => `<span class="field-tag">${esc(f)}</span>`).join('');
+        html += `<div class="missing-row"><span class="missing-label">Missing:</span>${tags}</div>`;
+      }
+
+      return html;
     }
 
-    return html;
-  }
-
-  function showTyping() {
-    const row = document.createElement('div');
-    row.className = 'typing-row';
-    row.id = 'typing';
-    row.innerHTML = `
+    function showTyping() {
+      const row = document.createElement('div');
+      row.className = 'typing-row';
+      row.id = 'typing';
+      row.innerHTML = `
       <div class="av bot">🔒</div>
       <div class="typing-bubble">
         <div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>
       </div>`;
-    $('chatInner').appendChild(row);
-    scrollBottom();
-  }
-
-  function hideTyping() {
-    const t = $('typing');
-    if (t) t.remove();
-  }
-
-  // ── Pending state ─────────────────────────────────────────────
-  function setPending(val) {
-    isPending = val;
-    $('pendingBanner').classList.toggle('visible', val);
-    $('pendingBadge').style.display = val ? 'flex' : 'none';
-    $('inputBox').placeholder = val
-      ? 'Type your answer…'
-      : "Type a command…  e.g. 'Add user Jay with id 101'";
-  }
-
-  // ── Send ──────────────────────────────────────────────────────
-  async function sendMessage() {
-    const box  = $('inputBox');
-    const text = box.value.trim();
-    if (!text) return;
-
-    box.value = '';
-    resize(box);
-    $('charCount').textContent = '';
-    $('sendBtn').disabled = true;
-
-    appendUserMsg(text);
-    showTyping();
-
-    try {
-      const res  = await fetch(`${API}/chat`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ text })
-      });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      hideTyping();
-      appendBotMsg(data.message, data.status, data.details);
-      setPending(data.status === 'need_input');
-
-    } catch (err) {
-      hideTyping();
-      appendBotMsg(
-        `Connection error — is the server running at ${API}?`,
-        'error', null
-      );
-      setPending(false);
-      console.error(err);
+      $('chatInner').appendChild(row);
+      scrollBottom();
     }
 
-    $('sendBtn').disabled = false;
-    box.focus();
-  }
+    function hideTyping() {
+      const t = $('typing');
+      if (t) t.remove();
+    }
 
-  function sendSuggestion(text) {
-    $('inputBox').value = text;
-    resize($('inputBox'));
-    sendMessage();
-  }
+    // ── Pending state ─────────────────────────────────────────────
+    function setPending(val) {
+      isPending = val;
+      $('pendingBanner').classList.toggle('visible', val);
+      $('pendingBadge').style.display = val ? 'flex' : 'none';
+      $('inputBox').placeholder = val
+        ? 'Type your answer…'
+        : "Type a command…  e.g. 'Add user Jay with id 101'";
+    }
 
-  // ── Keyboard ─────────────────────────────────────────────────
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+    // ── Send ──────────────────────────────────────────────────────
+    async function sendMessage() {
+      const box = $('inputBox');
+      const text = box.value.trim();
+      if (!text) return;
+
+      box.value = '';
+      resize(box);
+      $('charCount').textContent = '';
+      $('sendBtn').disabled = true;
+
+      appendUserMsg(text);
+      showTyping();
+
+      try {
+        const res = await fetch(`${API}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        hideTyping();
+        appendBotMsg(data.message, data.status, data.details);
+        setPending(data.status === 'need_input');
+
+      } catch (err) {
+        hideTyping();
+        appendBotMsg(
+          `Connection error — is the server running at ${API}?`,
+          'error', null
+        );
+        setPending(false);
+        console.error(err);
+      }
+
+      $('sendBtn').disabled = false;
+      box.focus();
+    }
+
+    function sendSuggestion(text) {
+      $('inputBox').value = text;
+      resize($('inputBox'));
       sendMessage();
     }
-  }
 
-  // Char counter
-  $('inputBox').addEventListener('input', function() {
-    const n = this.value.length;
-    $('charCount').textContent = n > 0 ? `${n} / 5000` : '';
-  });
+    // ── Keyboard ─────────────────────────────────────────────────
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
 
-  // ── Clear ─────────────────────────────────────────────────────
-  function clearChat() {
-    const inner = $('chatInner');
-    inner.innerHTML = '';
+    // Char counter
+    $('inputBox').addEventListener('input', function () {
+      const n = this.value.length;
+      $('charCount').textContent = n > 0 ? `${n} / 5000` : '';
+    });
 
-    const w = document.createElement('div');
-    w.className = 'welcome';
-    w.id = 'welcome';
-    w.innerHTML = `
+    // ── Clear ─────────────────────────────────────────────────────
+    function clearChat() {
+      const inner = $('chatInner');
+      inner.innerHTML = '';
+
+      const w = document.createElement('div');
+      w.className = 'welcome';
+      w.id = 'welcome';
+      w.innerHTML = `
       <div class="welcome-icon">🔒</div>
       <div class="welcome-title">CoSec AI Copilot</div>
       <div class="welcome-desc">Control your COSEC access devices using natural language.</div>
@@ -643,29 +874,30 @@
         <div class="chip" onclick="sendSuggestion('Get access setting')">🔑 Get access setting</div>
         <div class="chip" onclick="sendSuggestion('Set access setting work start at 9 00')">⏰ Set access time</div>
       </div>`;
-    inner.appendChild(w);
-    setPending(false);
-  }
+      inner.appendChild(w);
+      setPending(false);
+    }
 
-  // ── API health check ─────────────────────────────────────────
-  function checkHealth() {
-    fetch(`${API}/health`)
-      .then(r => r.json())
-      .then(() => {
-        $('apiDot').className  = 'dot pulse';
-        $('apiText').textContent = 'API Online';
-      })
-      .catch(() => {
-        $('apiDot').className  = 'dot offline';
-        $('apiText').textContent = 'API Offline';
-      });
-  }
+    // ── API health check ─────────────────────────────────────────
+    function checkHealth() {
+      fetch(`${API}/health`)
+        .then(r => r.json())
+        .then(() => {
+          $('apiDot').className = 'dot pulse';
+          $('apiText').textContent = 'API Online';
+        })
+        .catch(() => {
+          $('apiDot').className = 'dot offline';
+          $('apiText').textContent = 'API Offline';
+        });
+    }
 
-  checkHealth();
-  setInterval(checkHealth, 30000);
+    checkHealth();
+    setInterval(checkHealth, 30000);
 
-  // Auto-focus input
-  $('inputBox').focus();
-</script>
+    // Auto-focus input
+    $('inputBox').focus();
+  </script>
 </body>
+
 </html>
