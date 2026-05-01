@@ -103,6 +103,13 @@ def build_url(group: str, params: Dict) -> str:
             if not params_to_encode["type"]:
                 params_to_encode["type"] = "7"
                 logger.info("Defaulting to 7")
+            else:
+                if params_to_encode["type"].lower() == "face":
+                    params_to_encode["type"] = "7"
+                    logger.info("Mapping 'face' to 7")
+                else:
+                    params_to_encode["type"] = "2"
+                    logger.info("Mapping 'face' to 2")
 
         if group == "enrolluser" and params.get("action") == "enroll" and params_to_encode.get("type") == "7":
             params_to_encode["face-count"] = "1"
