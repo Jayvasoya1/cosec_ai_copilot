@@ -15,7 +15,7 @@ class EnrollOptionsSchema(BaseSchema):
     actions = {
         "enroll": {
             "description": "enroll user",
-            "required": ["pdid", "user-id"],
+            "required": ["pdid", "user-id","type"],
             "optional": []
         }
     }
@@ -23,7 +23,9 @@ class EnrollOptionsSchema(BaseSchema):
     # Field constraints and valid values
     FIELD_CONSTRAINTS = {
         "pdid": {"type": "int"},
-        "user-id": {"type": "int"}
+        "user-id": {"type": "int"},
+        "type":{"type":"int"}
+
     }
     
     def get_required_fields(self, action: str) -> List[str]:
