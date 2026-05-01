@@ -100,16 +100,26 @@ def build_url(group: str, params: Dict) -> str:
                 
         if group == "enrolluser" and params.get("action") == "enroll":
             logger.info(f"Building URL for enrolluser enroll with params: {params_to_encode}")
-            if not params_to_encode["type"]:
+            # Accept numeric type codes as-is; map known words to codes
+            tval = str(params_to_encode.get("type", "")).strip()
+            if not tval:
                 params_to_encode["type"] = "7"
                 logger.info("Defaulting to 7")
             else:
-                if params_to_encode["type"].lower() == "face":
+                tl = tval.lower()
+                if tl.isdigit():
+                    params_to_encode["type"] = tl
+                    logger.info(f"Using numeric type: {tl}")
+                elif "face" in tl:
                     params_to_encode["type"] = "7"
                     logger.info("Mapping 'face' to 7")
-                else:
+                elif any(k in tl for k in ("finger", "fingerprint")):
                     params_to_encode["type"] = "2"
-                    logger.info("Mapping 'face' to 2")
+                    logger.info("Mapping 'finger' to 2")
+                else:
+                    # Unknown string value — leave as-is (string will be URL-encoded)
+                    params_to_encode["type"] = tl
+                    logger.info(f"Leaving unknown type string as: {tl}")
 
         if group == "enrolluser" and params.get("action") == "enroll" and params_to_encode.get("type") == "7":
             params_to_encode["face-count"] = "1"

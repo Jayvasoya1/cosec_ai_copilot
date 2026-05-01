@@ -157,11 +157,13 @@ def get_user(
 def enroll_user(
     pdid: Optional[str] = None,
     user_id: Optional[str] = None,
+    type: Optional[str] = None,
 ) -> str:
     """
     Enroll a user on a specific panel door device.
     Use for: "enroll user", "enroll user on door N".
-    Extract: pdid (door id or panel door id), user_id (user id).
+    Extract: pdid (door id or panel door id), user_id (user id),
+    type (biometric type — e.g. 'face', 'finger' or numeric code like '7').
     """
     return "dispatched"
 
@@ -643,6 +645,16 @@ def _extract_door_params(parts: list) -> dict:
 
         if pl == "mac" and i + 1 < len(parts):
             params["mac-address"] = parts[i + 1]
+
+        # Extract 'type' when user writes "type 7" or "type face"
+        if pl == "type" and i + 1 < len(parts):
+            params["type"] = parts[i + 1]
+            continue
+
+        # Recognise standalone biometric type words (face/finger/palm)
+        if pl in ("face", "finger", "palm", "fingerprint", "biometric"):
+            params["type"] = pl
+            continue
 
         if p.isdigit() and "pdid" not in params:
             params["pdid"] = p
